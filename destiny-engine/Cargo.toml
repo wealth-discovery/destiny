@@ -9,3 +9,5 @@ repository.workspace = true
 readme.workspace = true
 
 [dependencies]
+destiny-helpers = { workspace = true }
+destiny-types = { workspace = true }
