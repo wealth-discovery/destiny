@@ -44,3 +44,5 @@ num_cpus = { version = "1" }
 homedir = { version = "0.3" }
 polars = { version = "0.46" }
 derive_builder = { version = "0.20" }
+aws-config = { version = "1.5", features = ["behavior-version-latest"] }
+aws-sdk-s3 = { version = "1.71" }
