@@ -14,3 +14,9 @@ pub fn now_ms() -> i64 {
 pub fn now() -> DateTime<Utc> {
     Utc::now()
 }
+
+pub fn str_to_date(s: &str) -> Result<DateTime<Utc>> {
+    DateTime::parse_from_rfc3339(s)
+        .map(|d| d.to_utc())
+        .map_err(|e| anyhow!("convert str to date failed: {}", e))
+}

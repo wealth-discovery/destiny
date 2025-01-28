@@ -11,3 +11,8 @@ readme.workspace = true
 [dependencies]
 destiny-helpers = { workspace = true }
 destiny-types = { workspace = true }
+async-trait = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+tokio = { workspace = true }
+derive_builder = { workspace = true }
