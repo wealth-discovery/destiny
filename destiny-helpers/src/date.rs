@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{Date, DateTime, TimeZone, Utc};
 
 pub fn ms_to_date(ms: i64) -> Result<DateTime<Utc>> {
     Utc.timestamp_millis_opt(ms)

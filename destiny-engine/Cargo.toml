@@ -18,3 +18,5 @@ tokio = { workspace = true }
 derive_builder = { workspace = true }
 aws-config = { workspace = true }
 aws-sdk-s3 = { workspace = true }
+sqlx = { workspace = true }
+futures = { workspace = true }
