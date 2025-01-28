@@ -1,14 +1,11 @@
+use crate::dao::Dao;
 use anyhow::Result;
 use aws_config::{meta::region::RegionProviderChain, BehaviorVersion, Region};
 use destiny_helpers::prelude::*;
-use sqlx::SqliteConnection;
 
 pub async fn sync_file_list() -> Result<()> {
-    let save_dir = cache_dir()?.join("market_data");
-    std::fs::create_dir_all(&save_dir)?;
-    let mut db = open_db(&save_dir.join("meta.db")).await?;
-    create_table_file_meta_new(&mut db).await?;
-    init_table_file_meta_new(&mut db).await?;
+    let dao = Dao::new(&cache_dir()?.join("market_data"), "meta.db").await?;
+    dao.file_meta_init().await?;
 
     let config = aws_config::defaults(BehaviorVersion::latest())
         .region(RegionProviderChain::default_provider().or_else(Region::new("us-east-1")))
@@ -29,18 +26,14 @@ pub async fn sync_file_list() -> Result<()> {
             .await?;
 
         for content in response.contents() {
-            let key = content.key().unwrap();
-            let split_key = key.split("/").collect::<Vec<&str>>();
-            let day = split_key[1];
-            let day = format!(
-                "{}-{}-{}",
-                day[0..4].to_owned(),
-                day[4..6].to_owned(),
-                day[6..8].to_owned()
-            );
+            let path = content.key().unwrap();
+            let split_key = path.split("/").collect::<Vec<&str>>();
+            let day = str_to_date(split_key[1])?;
             let hour = split_key[2].parse::<i32>()?;
             let symbol = split_key[4].split(".").next().unwrap();
-            save_file_meta_new(&mut db, &day, hour, symbol, key).await?;
+            let update_time = ms_to_date(content.last_modified.unwrap().to_millis()?)?;
+            dao.file_meta_sync(day, hour, symbol, path, update_time)
+                .await?;
         }
         continuation_token = response.next_continuation_token().map(|s| s.to_string());
         if continuation_token.is_none() {
@@ -48,44 +41,5 @@ pub async fn sync_file_list() -> Result<()> {
         }
     }
 
-    Ok(())
-}
-
-async fn create_table_file_meta_new(db: &mut SqliteConnection) -> Result<()> {
-    sqlx::query(
-        "
-        create table if not exists file_meta_new (
-            id integer primary key autoincrement, 
-            day date,
-            hour integer, 
-            symbol text,
-            path text
-        )
-        ",
-    )
-    .execute(db)
-    .await?;
-    Ok(())
-}
-
-async fn init_table_file_meta_new(db: &mut SqliteConnection) -> Result<()> {
-    sqlx::query("delete from file_meta_new").execute(db).await?;
-    Ok(())
-}
-
-async fn save_file_meta_new(
-    db: &mut SqliteConnection,
-    day: &str,
-    hour: i32,
-    symbol: &str,
-    path: &str,
-) -> Result<()> {
-    sqlx::query("insert into file_meta_new (day, hour, symbol, path) values (?, ?, ?, ?)")
-        .bind(day)
-        .bind(hour)
-        .bind(symbol)
-        .bind(path)
-        .execute(db)
-        .await?;
     Ok(())
 }

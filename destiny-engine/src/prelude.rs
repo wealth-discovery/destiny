@@ -3,5 +3,6 @@ pub use crate::{
         run as run_backtest, Backtest, BacktestConfig, BacktestConfigBuilder,
         BacktestConfigBuilderError,
     },
+    dao::*,
     traits::*,
 };
