@@ -39,9 +39,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 snowflaked = { version = "1", features = ["sync"] }
 async-trait = { version = "0.1" }
-parking_lot = { version = "0.12" }
-ringbuffer = { version = "0.15" }
 uuid = { version = "1", features = ["v4", "fast-rng", "macro-diagnostics"] }
 num_cpus = { version = "1" }
 homedir = { version = "0.3" }
 polars = { version = "0.46" }
+derive_builder = { version = "0.20" }
