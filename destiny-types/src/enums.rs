@@ -38,9 +38,9 @@ pub enum TradeSide {
     Short,
 }
 
-/// K线周期
+/// 周期
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
-pub enum CandlePeriod {
+pub enum Period {
     /// 1分钟
     #[serde(rename = "1m")]
     M1,
