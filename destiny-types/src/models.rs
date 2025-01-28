@@ -2,119 +2,84 @@ use crate::enums::*;
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
-pub struct Candle {
-    pub product: ProductType,
-    pub code: String,
-    pub interval: CandleInterval,
-    pub open_time: DateTime<Utc>,
-    pub close_time: DateTime<Utc>,
-    pub open: f64,
-    pub high: f64,
-    pub low: f64,
-    pub close: f64,
-    pub volume: f64,
-    pub amount: f64,
-    pub taker_volume: f64,
-    pub taker_amount: f64,
-    pub trades: i64,
-    pub update_time: DateTime<Utc>,
-}
-
-#[derive(Debug, Clone)]
-pub struct Orderbook {
-    pub buys: Vec<(f64, f64)>,
-    pub sells: Vec<(f64, f64)>,
-    pub update_time: DateTime<Utc>,
-}
-
-#[derive(Debug, Clone)]
-pub struct Price {
-    pub value: f64,
-    pub update_time: DateTime<Utc>,
-}
-
-#[derive(Debug, Clone)]
-pub struct TradeFeeRate {
-    pub taker: f64,
-    pub maker: f64,
-}
-
-#[derive(Debug, Clone)]
-pub struct TradeRule {
-    pub min_volume: f64,
-    pub min_price: f64,
-    pub min_amount: f64,
-}
-
-#[derive(Debug, Clone)]
-pub struct Pair {
-    pub product: ProductType,
-    pub code: String,
-    pub trade_rule: TradeRule,
-    pub trade_fee_rate: TradeFeeRate,
-    pub mark_price: Price,
-    pub index_price: Price,
-    pub last_price: Price,
-    pub funding_rate: Price,
-    pub orderbook: Orderbook,
-    pub candles: HashMap<CandleInterval, Vec<Candle>>,
-}
-
+/// 订单
 #[derive(Debug, Clone)]
 pub struct Order {
+    /// 订单ID
     pub id: String,
+    /// 交易所订单ID
     pub eid: String,
+    /// 产品类型
     pub product: ProductType,
-    pub code: String,
+    /// 交易对
+    pub symbol: String,
+    /// 交易类型
     pub type_: TradeType,
+    /// 交易方向
     pub side: TradeSide,
+    /// 是否只减仓
     pub reduce_only: bool,
+    /// 订单状态
     pub status: OrderStatus,
+    /// 数量
     pub volume: f64,
+    /// 价格
     pub price: f64,
+    /// 成交数量
     pub deal_volume: f64,
+    /// 成交价格
     pub deal_price: f64,
+    /// 成交手续费
     pub deal_fee: f64,
+    /// 创建时间
     pub create_time: DateTime<Utc>,
 }
 
+/// 现货资产
 #[derive(Debug, Clone)]
-pub struct Position {
-    pub product: ProductType,
-    pub code: String,
+pub struct SpotAsset {
+    /// 资产名
+    pub name: String,
+    /// 资产数量
+    pub total: f64,
+    /// 可用数量
+    pub available: f64,
+    /// 冻结数量
+    pub frozen: f64,
+}
+
+/// 合约持仓
+#[derive(Debug, Clone)]
+pub struct ContractPosition {
+    /// 交易对
+    pub symbol: String,
+    /// 方向
     pub side: TradeSide,
-    pub volume: f64,
-    pub price: f64,
+    /// 持仓
+    pub total: f64,
+    /// 可用持仓
+    pub available: f64,
+    /// 冻结持仓
+    pub frozen: f64,
+    /// 持仓均价
+    pub avg_price: f64,
+    /// 杠杆
     pub leverage: i32,
 }
 
+/// 账户
 #[derive(Debug, Clone)]
 pub struct Account {
-    pub positions: Vec<Position>,
+    /// 现货资产
+    pub spot_assets: HashMap<String, SpotAsset>,
+    /// 合约持仓
+    pub contract_positions: HashMap<String, ContractPosition>,
+    /// 合约保证金
+    pub contract_margin: f64,
+    /// 合约可用保证金
+    pub contract_available_margin: f64,
+    /// 合约冻结保证金
+    pub contract_frozen_margin: f64,
+    /// 订单
     pub orders: HashMap<String, Order>,
-}
-
-#[derive(Debug, Clone)]
-pub struct BacktestConfig {
-    pub spot_balance: f64,
-    pub contract_balance: f64,
-    pub start_time: DateTime<Utc>,
-    pub end_time: DateTime<Utc>,
-    pub trade_fee_rate: TradeFeeRate,
-    pub trade_slippage_rate: f64,
-}
-
-#[derive(Debug, Clone)]
-pub struct TestnetConfig {
-    pub api_key: String,
-    pub api_secret: String,
-    pub api_passphrase: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct MainnetConfig {
-    pub api_key: String,
-    pub api_secret: String,
-    pub api_passphrase: String,
 }
