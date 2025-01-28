@@ -32,7 +32,7 @@ pub async fn sync_file_list() -> Result<()> {
             let hour = split_key[2].parse::<i32>()?;
             let symbol = split_key[4].split(".").next().unwrap();
             let update_time = ms_to_date(content.last_modified.unwrap().to_millis()?)?;
-            dao.file_meta_sync(day, hour, symbol, path, update_time)
+            dao.file_meta_sync(symbol, day, hour, path, update_time)
                 .await?;
         }
         continuation_token = response.next_continuation_token().map(|s| s.to_string());

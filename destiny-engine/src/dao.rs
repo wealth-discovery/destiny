@@ -21,10 +21,10 @@ impl Dao {
         sqlx::query(
             "
         create table if not exists file_meta (
-            id integer primary key autoincrement, 
-            day date not null,
-            hour integer not null, 
+            id integer not null primary key autoincrement,
             symbol text not null,
+            day date not null,
+            hour integer not null,
             path text not null,
             update_time datetime not null,
             local_time datetime
@@ -47,9 +47,9 @@ impl Dao {
 
     pub async fn file_meta_sync(
         &self,
+        symbol: &str,
         day: DateTime<Utc>,
         hour: i32,
-        symbol: &str,
         path: &str,
         update_time: DateTime<Utc>,
     ) -> Result<()> {
@@ -58,18 +58,18 @@ impl Dao {
         sqlx::query(
             "
         insert into file_meta 
-            (day, hour, symbol, path, update_time) 
+            (symbol, day, hour, path, update_time) 
         values 
-            (?, ?, ?, ?, ?)
+            (?, date(?), ?, ?, ?)
         on conflict 
             (symbol, day, hour)
         do update set 
             update_time = excluded.update_time
         ",
         )
+        .bind(symbol)
         .bind(day)
         .bind(hour)
-        .bind(symbol)
         .bind(path)
         .bind(update_time)
         .execute(&mut *tx)
