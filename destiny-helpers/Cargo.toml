@@ -1,0 +1,15 @@
+[package]
+name = "destiny-helpers"
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+edition.workspace = true
+license-file.workspace = true
+repository.workspace = true
+readme.workspace = true
+
+[dependencies]
+chrono = { workspace = true }
+anyhow = { workspace = true }
+uuid = { workspace = true }
+homedir = { workspace = true }

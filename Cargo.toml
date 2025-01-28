@@ -1,0 +1,47 @@
+[workspace]
+members = ["destiny-engine", "destiny-helpers", "destiny-types"]
+resolver = "2"
+
+[workspace.package]
+version = "1.0.0"
+authors = ["<Husky> <husky@wealths.app"]
+description = "天命量化库"
+edition = "2021"
+license-file = "LICENSE"
+repository = "https://github.com/wealth-discovery/destiny"
+readme = "README.md"
+
+[profile.release]
+codegen-units = 1
+debug = false
+lto = true
+strip = true
+opt-level = "z"
+panic = 'abort'
+overflow-checks = false
+debug-assertions = false
+incremental = false
+
+[workspace.dependencies]
+destiny-engine = { path = "./destiny-engine" }
+destiny-helpers = { path = "./destiny-helpers" }
+destiny-types = { path = "./destiny-types" }
+tokio = { version = "1", features = ["full"] }
+anyhow = { version = "1" }
+tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = ["local-time", "json"] }
+chrono = { version = "0.4" }
+time = { version = "0.3", features = ["macros", "formatting"] }
+once_cell = { version = "1" }
+rayon = { version = "1" }
+futures = { version = "0.3" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
+snowflaked = { version = "1", features = ["sync"] }
+async-trait = { version = "0.1" }
+parking_lot = { version = "0.12" }
+ringbuffer = { version = "0.15" }
+uuid = { version = "1", features = ["v4", "fast-rng", "macro-diagnostics"] }
+num_cpus = { version = "1" }
+homedir = { version = "0.3" }
+polars = { version = "0.46" }

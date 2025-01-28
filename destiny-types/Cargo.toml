@@ -1,0 +1,13 @@
+[package]
+name = "destiny-types"
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+edition.workspace = true
+license-file.workspace = true
+repository.workspace = true
+readme.workspace = true
+
+[dependencies]
+chrono = { workspace = true }
+serde = { workspace = true }
