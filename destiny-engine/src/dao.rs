@@ -1,6 +1,7 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use destiny_helpers::prelude::*;
+use destiny_types::models::MarketFileMeta;
 use sqlx::{Pool, Sqlite};
 use std::path::PathBuf;
 
@@ -16,11 +17,11 @@ impl Dao {
 }
 
 impl Dao {
-    pub async fn file_meta_init(&self) -> Result<()> {
+    pub async fn market_file_meta_init(&self) -> Result<()> {
         let mut tx = self.0.begin().await?;
         sqlx::query(
             "
-        create table if not exists file_meta (
+        create table if not exists market_file_meta (
             id integer not null primary key autoincrement,
             symbol text not null,
             day date not null,
@@ -35,7 +36,7 @@ impl Dao {
         .await?;
 
         sqlx::query(
-            "create unique index if not exists idx_file_meta on file_meta(symbol, day, hour)",
+            "create unique index if not exists idx_market_file_meta on market_file_meta(symbol, day, hour)",
         )
         .execute(&mut *tx)
         .await?;
@@ -45,7 +46,7 @@ impl Dao {
         Ok(())
     }
 
-    pub async fn file_meta_sync(
+    pub async fn market_file_meta_sync(
         &self,
         symbol: &str,
         day: DateTime<Utc>,
@@ -53,11 +54,9 @@ impl Dao {
         path: &str,
         update_time: DateTime<Utc>,
     ) -> Result<()> {
-        let mut tx = self.0.begin().await?;
-
         sqlx::query(
             "
-        insert into file_meta 
+        insert into market_file_meta 
             (symbol, day, hour, path, update_time) 
         values 
             (?, date(?), ?, ?, ?)
@@ -72,10 +71,38 @@ impl Dao {
         .bind(hour)
         .bind(path)
         .bind(update_time)
-        .execute(&mut *tx)
+        .execute(&self.0)
         .await?;
 
-        tx.commit().await?;
+        Ok(())
+    }
+
+    pub async fn market_file_meta_get_by_symbol(
+        &self,
+        symbol: &str,
+    ) -> Result<Vec<MarketFileMeta>> {
+        let mut query =
+            sqlx::QueryBuilder::<Sqlite>::new("select * from market_file_meta where symbol = ?");
+        query.push_bind(symbol);
+
+        let result = query.build_query_as().fetch_all(&self.0).await?;
+
+        Ok(result)
+    }
+
+    pub async fn market_file_meta_update_local_time(
+        &self,
+        id: i64,
+        local_time: DateTime<Utc>,
+    ) -> Result<()> {
+        let mut query = sqlx::QueryBuilder::<Sqlite>::new(
+            "update market_file_meta set local_time = ? where id = ?",
+        );
+        query.push_bind(local_time);
+        query.push_bind(id);
+
+        query.build().execute(&self.0).await?;
+
         Ok(())
     }
 }

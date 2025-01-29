@@ -11,3 +11,4 @@ readme.workspace = true
 [dependencies]
 chrono = { workspace = true }
 serde = { workspace = true }
+sqlx = { workspace = true }

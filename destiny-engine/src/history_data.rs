@@ -2,11 +2,12 @@ use crate::dao::Dao;
 use anyhow::Result;
 use aws_config::{meta::region::RegionProviderChain, BehaviorVersion, Region};
 use destiny_helpers::prelude::*;
+use tracing::instrument;
 
+#[instrument(name = "SyncFileList", skip_all)]
 pub async fn sync_file_list() -> Result<()> {
-    tracing::info!("sync file list");
     let dao = Dao::new(&cache_dir()?.join("market_data"), "meta.db").await?;
-    dao.file_meta_init().await?;
+    dao.market_file_meta_init().await?;
 
     let config = aws_config::defaults(BehaviorVersion::latest())
         .region(RegionProviderChain::default_provider().or_else(Region::new("us-east-1")))
@@ -38,10 +39,10 @@ pub async fn sync_file_list() -> Result<()> {
                     .expect("last_modified is none")
                     .to_millis()?,
             )?;
-            dao.file_meta_sync(symbol, day, hour, path, update_time)
+            dao.market_file_meta_sync(symbol, day, hour, path, update_time)
                 .await?;
             tracing::info!(
-                "sync file meta: symbol({}), day({}), hour({}), update_time({}), path({})",
+                "symbol({}), day({}), hour({}), update_time({}), path({})",
                 symbol,
                 day.format("%Y-%m-%d"),
                 hour,
@@ -53,6 +54,18 @@ pub async fn sync_file_list() -> Result<()> {
         if continuation_token.is_none() {
             break;
         }
+    }
+
+    Ok(())
+}
+
+pub async fn download_files(symbol: &str) -> Result<()> {
+    let dao = Dao::new(&cache_dir()?.join("market_data"), "meta.db").await?;
+    dao.market_file_meta_init().await?;
+
+    let file_metas = dao.market_file_meta_get_by_symbol(symbol).await?;
+    for file_meta in file_metas {
+        tracing::info!("{:?}", file_meta);
     }
 
     Ok(())
