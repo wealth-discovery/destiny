@@ -32,9 +32,6 @@ pub async fn sync_file_list() -> Result<()> {
         for content in response.contents() {
             let path = content.key().expect("key is none");
             let split_key = path.split("/").collect::<Vec<&str>>();
-            let datatype = split_key[3];
-            tracing::info!("{}", datatype);
-            continue;
             let day = str_to_date(split_key[1])?;
             let hour = split_key[2].parse::<i32>()?;
             let symbol = split_key[4].split(".").next().expect("symbol is none");
