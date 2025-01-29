@@ -27,12 +27,17 @@ pub async fn sync_file_list() -> Result<()> {
             .await?;
 
         for content in response.contents() {
-            let path = content.key().unwrap();
+            let path = content.key().expect("key is none");
             let split_key = path.split("/").collect::<Vec<&str>>();
             let day = str_to_date(split_key[1])?;
             let hour = split_key[2].parse::<i32>()?;
-            let symbol = split_key[4].split(".").next().unwrap();
-            let update_time = ms_to_date(content.last_modified.unwrap().to_millis()?)?;
+            let symbol = split_key[4].split(".").next().expect("symbol is none");
+            let update_time = ms_to_date(
+                content
+                    .last_modified
+                    .expect("last_modified is none")
+                    .to_millis()?,
+            )?;
             dao.file_meta_sync(symbol, day, hour, path, update_time)
                 .await?;
             tracing::info!(
