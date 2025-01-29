@@ -16,9 +16,6 @@ anyhow = { workspace = true }
 chrono = { workspace = true }
 tokio = { workspace = true }
 derive_builder = { workspace = true }
-aws-config = { workspace = true }
-aws-sdk-s3 = { workspace = true }
 sqlx = { workspace = true }
 futures = { workspace = true }
 tracing = { workspace = true }
-lz4 = { workspace = true }

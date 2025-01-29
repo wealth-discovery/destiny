@@ -3,22 +3,27 @@ use anyhow::{ensure, Result};
 use async_trait::async_trait;
 use chrono::{DateTime, Duration, DurationRound, Utc};
 use derive_builder::Builder;
-use destiny_helpers::num::{is_zero, truncate_float};
+use destiny_helpers::prelude::*;
 use std::sync::Arc;
 
+/// 回测配置
 #[derive(Builder)]
 #[builder(setter(into))]
 pub struct BacktestConfig {
+    /// 开始时间
     pub begin: DateTime<Utc>,
+    /// 结束时间
     pub end: DateTime<Utc>,
+    /// 初始资金
     #[builder(default = 1000.)]
-    pub spot_balance: f64,
-    #[builder(default = 1000.)]
-    pub contract_balance: f64,
+    pub cash: f64,
+    /// 吃单手续费率
     #[builder(default = 0.0005)]
-    pub taker_fee_rate: f64,
+    pub fee_rate_taker: f64,
+    /// 挂单手续费率
     #[builder(default = 0.0005)]
-    pub maker_fee_rate: f64,
+    pub fee_rate_maker: f64,
+    /// 滑点
     #[builder(default = 0.01)]
     pub slippage_rate: f64,
 }
@@ -39,25 +44,11 @@ fn new(mut config: BacktestConfig) -> Result<Arc<Backtest>> {
         "begin time must be less than end time"
     );
 
-    config.spot_balance = truncate_float(config.spot_balance, 8, false);
-    ensure!(
-        config.spot_balance >= 0.0,
-        "spot balance must be greater than 0"
-    );
+    config.cash = truncate_float(config.cash, 8, false);
+    ensure!(config.cash >= 0.0, "cash must be greater than 0");
 
-    config.contract_balance = truncate_float(config.contract_balance, 8, false);
-    ensure!(
-        config.contract_balance >= 0.0,
-        "contract balance must be greater than 0"
-    );
-
-    ensure!(
-        !(is_zero(config.spot_balance) && is_zero(config.contract_balance)),
-        "spot balance and contract balance must not be both 0"
-    );
-
-    config.taker_fee_rate = truncate_float(config.taker_fee_rate, 8, false);
-    config.maker_fee_rate = truncate_float(config.maker_fee_rate, 8, false);
+    config.fee_rate_taker = truncate_float(config.fee_rate_taker, 8, false);
+    config.fee_rate_maker = truncate_float(config.fee_rate_maker, 8, false);
 
     config.slippage_rate = truncate_float(config.slippage_rate, 8, false);
     ensure!(

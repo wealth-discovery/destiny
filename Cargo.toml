@@ -32,21 +32,16 @@ tracing = { version = "0.1" }
 tracing-appender = { version = "0.2" }
 tracing-subscriber = { version = "0.3", features = ["local-time", "json"] }
 chrono = { version = "0.4" }
-time = { version = "0.3", features = ["macros", "formatting"] }
 once_cell = { version = "1" }
 rayon = { version = "1" }
 futures = { version = "0.3" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
-snowflaked = { version = "1", features = ["sync"] }
 async-trait = { version = "0.1" }
 uuid = { version = "1", features = ["v4", "fast-rng", "macro-diagnostics"] }
-num_cpus = { version = "1" }
 homedir = { version = "0.3" }
 polars = { version = "0.46" }
 derive_builder = { version = "0.20" }
-aws-config = { version = "1.5", features = ["behavior-version-latest"] }
-aws-sdk-s3 = { version = "1.71" }
 sqlx = { version = "0.8", features = [
     "runtime-tokio",
     "tls-rustls-ring-webpki",
@@ -55,4 +50,3 @@ sqlx = { version = "0.8", features = [
     "macros",
     "chrono",
 ] }
-lz4 = { version = "1.28" }

@@ -18,6 +18,5 @@ sqlx = { workspace = true }
 tracing = { workspace = true }
 tracing-appender = { workspace = true }
 tracing-subscriber = { workspace = true }
-time = { workspace = true }
 derive_builder = { workspace = true }
 tokio = { workspace = true }

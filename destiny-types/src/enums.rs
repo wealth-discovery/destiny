@@ -11,15 +11,6 @@ pub enum RunMode {
     Mainnet,
 }
 
-/// 产品类型
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
-pub enum ProductType {
-    /// 现货
-    Spot,
-    /// 合约
-    Contract,
-}
-
 /// 交易类型
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub enum TradeType {
