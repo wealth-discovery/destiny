@@ -314,6 +314,8 @@ pub async fn sync(meta: SyncHistoryMeta) -> Result<()> {
         return Ok(());
     }
 
+    tracing::info!("start download history data: {}", meta.save_file_name());
+
     let request_url = meta.url();
     let response = reqwest::get(request_url).await?;
     if !response.status().is_success() {
