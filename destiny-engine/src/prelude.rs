@@ -4,6 +4,6 @@ pub use crate::{
         BacktestConfigBuilderError,
     },
     dao::*,
-    history_data::*,
+    history_data::{sync as sync_history_data, SyncHistoryMeta},
     traits::*,
 };
