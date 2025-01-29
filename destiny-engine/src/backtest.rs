@@ -289,28 +289,28 @@ async fn sync_history_data(symbols: &[String]) -> Result<()> {
                 start.year() as i64,
                 start.month() as i64,
             ))
-            .await?;
+            .await;
 
             history_data::sync(history_data::SyncHistoryMeta::book_ticker(
                 &symbol,
                 start.year() as i64,
                 start.month() as i64,
             ))
-            .await?;
+            .await;
 
             history_data::sync(history_data::SyncHistoryMeta::funding_rate(
                 &symbol,
                 start.year() as i64,
                 start.month() as i64,
             ))
-            .await?;
+            .await;
 
             history_data::sync(history_data::SyncHistoryMeta::trades(
                 &symbol,
                 start.year() as i64,
                 start.month() as i64,
             ))
-            .await?;
+            .await;
 
             for interval in KlineInterval::iter() {
                 history_data::sync(history_data::SyncHistoryMeta::index_price_klines(
@@ -319,7 +319,7 @@ async fn sync_history_data(symbols: &[String]) -> Result<()> {
                     start.year() as i64,
                     start.month() as i64,
                 ))
-                .await?;
+                .await;
 
                 history_data::sync(history_data::SyncHistoryMeta::klines(
                     &symbol,
@@ -327,7 +327,7 @@ async fn sync_history_data(symbols: &[String]) -> Result<()> {
                     start.year() as i64,
                     start.month() as i64,
                 ))
-                .await?;
+                .await;
 
                 history_data::sync(history_data::SyncHistoryMeta::mark_price_klines(
                     &symbol,
@@ -335,7 +335,7 @@ async fn sync_history_data(symbols: &[String]) -> Result<()> {
                     start.year() as i64,
                     start.month() as i64,
                 ))
-                .await?;
+                .await;
 
                 history_data::sync(history_data::SyncHistoryMeta::premium_index_klines(
                     &symbol,
@@ -343,7 +343,7 @@ async fn sync_history_data(symbols: &[String]) -> Result<()> {
                     start.year() as i64,
                     start.month() as i64,
                 ))
-                .await?;
+                .await;
             }
         }
         start = start + Months::new(1);

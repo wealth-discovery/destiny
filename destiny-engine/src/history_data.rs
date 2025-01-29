@@ -1,5 +1,6 @@
 use anyhow::{bail, Result};
 use async_zip::base::read::seek::ZipFileReader;
+use chrono::Duration;
 use destiny_helpers::path::cache_dir;
 use destiny_types::enums::KlineInterval;
 use futures::AsyncReadExt;
@@ -7,6 +8,7 @@ use std::path::PathBuf;
 use tokio::{
     fs::{create_dir_all, File},
     io::{AsyncWriteExt, BufReader},
+    time::sleep,
 };
 use tracing::instrument;
 
@@ -301,8 +303,15 @@ impl SyncHistoryMeta {
     }
 }
 
+pub async fn sync(meta: SyncHistoryMeta) {
+    while let Err(err) = sync0(&meta).await {
+        tracing::error!("{}", err);
+        sleep(Duration::milliseconds(200).to_std().unwrap()).await;
+    }
+}
+
 #[instrument(name = "SyncHistoryData")]
-pub async fn sync(meta: SyncHistoryMeta) -> Result<()> {
+async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
     let save_path = cache_dir()?.join("history_data").join(meta.save_path());
     if !save_path.exists() {
         create_dir_all(&save_path).await?;

@@ -32,19 +32,19 @@ async fn test_sync_history_data() -> Result<()> {
 
 #[instrument(name = "DownloadAggTrades")]
 async fn download_agg_trades() -> Result<()> {
-    sync_history_data(SyncHistoryMeta::agg_trades("BTCUSDT", 2020, 1)).await?;
+    sync_history_data(SyncHistoryMeta::agg_trades("BTCUSDT", 2020, 1)).await;
     Ok(())
 }
 
 #[instrument(name = "DownloadBookTicker")]
 async fn download_book_ticker() -> Result<()> {
-    sync_history_data(SyncHistoryMeta::book_ticker("BTCUSDT", 2020, 1)).await?;
+    sync_history_data(SyncHistoryMeta::book_ticker("BTCUSDT", 2020, 1)).await;
     Ok(())
 }
 
 #[instrument(name = "DownloadFundingRate")]
 async fn download_funding_rate() -> Result<()> {
-    sync_history_data(SyncHistoryMeta::funding_rate("BTCUSDT", 2020, 1)).await?;
+    sync_history_data(SyncHistoryMeta::funding_rate("BTCUSDT", 2020, 1)).await;
     Ok(())
 }
 
@@ -53,13 +53,13 @@ async fn download_index_price_klines(interval: KlineInterval) -> Result<()> {
     sync_history_data(SyncHistoryMeta::index_price_klines(
         "BTCUSDT", interval, 2020, 1,
     ))
-    .await?;
+    .await;
     Ok(())
 }
 
 #[instrument(name = "DownloadKline")]
 async fn download_kline(interval: KlineInterval) -> Result<()> {
-    sync_history_data(SyncHistoryMeta::klines("BTCUSDT", interval, 2020, 1)).await?;
+    sync_history_data(SyncHistoryMeta::klines("BTCUSDT", interval, 2020, 1)).await;
     Ok(())
 }
 
@@ -68,7 +68,7 @@ async fn download_mark_price_klines(interval: KlineInterval) -> Result<()> {
     sync_history_data(SyncHistoryMeta::mark_price_klines(
         "BTCUSDT", interval, 2020, 1,
     ))
-    .await?;
+    .await;
     Ok(())
 }
 
@@ -77,12 +77,12 @@ async fn download_premium_index_klines(interval: KlineInterval) -> Result<()> {
     sync_history_data(SyncHistoryMeta::premium_index_klines(
         "BTCUSDT", interval, 2020, 1,
     ))
-    .await?;
+    .await;
     Ok(())
 }
 
 #[instrument(name = "DownloadTrades")]
 async fn download_trades() -> Result<()> {
-    sync_history_data(SyncHistoryMeta::trades("BTCUSDT", 2020, 1)).await?;
+    sync_history_data(SyncHistoryMeta::trades("BTCUSDT", 2020, 1)).await;
     Ok(())
 }
