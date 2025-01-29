@@ -52,7 +52,7 @@ pub struct SymbolPosition {
     /// 交易对
     pub symbol: String,
     /// 杠杆倍率
-    pub leverage: i32,
+    pub leverage: u32,
     /// 做多持仓
     pub long: Position,
     /// 做空持仓
