@@ -9,7 +9,7 @@ impl FormatTime for LocalTimer {
     fn format_time(&self, w: &mut tracing_subscriber::fmt::format::Writer<'_>) -> std::fmt::Result {
         let now =
             chrono::Utc::now().with_timezone(&chrono::FixedOffset::east_opt(8 * 3600).unwrap());
-        write!(w, "{}", now.format("%Y%m%d%H%M%S"))
+        write!(w, "{}", now.format("%Y-%m-%d %H:%M:%S"))
     }
 }
 
