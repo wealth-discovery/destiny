@@ -10,17 +10,18 @@ struct BacktestStrategy;
 #[allow(unused_variables)]
 impl Strategy for BacktestStrategy {
     async fn on_init(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        tracing::info!("on_init: {}", engine.now_ms());
+        tracing::info!("on_init: {}", engine.now());
+        engine.init_symbol("ETHUSDT")?;
         Ok(())
     }
 
     async fn on_start(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        tracing::info!("on_start: {}", engine.now_ms());
+        tracing::info!("on_start: {}", engine.now());
         Ok(())
     }
 
     async fn on_stop(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        tracing::info!("on_stop: {}", engine.now_ms());
+        tracing::info!("on_stop: {}", engine.now());
         Ok(())
     }
 }

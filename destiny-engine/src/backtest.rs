@@ -3,7 +3,7 @@ use anyhow::{ensure, Result};
 use async_trait::async_trait;
 use chrono::{
     DateTime, Datelike, Duration, DurationRound, Months, NaiveDate, NaiveDateTime, NaiveTime,
-    SubsecRound, TimeZone, Utc,
+    TimeZone, Utc,
 };
 use derive_builder::Builder;
 use destiny_helpers::prelude::*;
@@ -38,11 +38,19 @@ pub struct BacktestConfig {
 pub struct Backtest {
     config: Arc<BacktestConfig>,
     account: Arc<Mutex<Account>>,
+    trade_time: Arc<Mutex<DateTime<Utc>>>,
 }
 
 impl Engine for Backtest {}
 
-impl EngineBasic for Backtest {}
+impl EngineBasic for Backtest {
+    fn now_ms(&self) -> i64 {
+        self.trade_time.lock().timestamp_millis()
+    }
+    fn now(&self) -> DateTime<Utc> {
+        self.trade_time.lock().clone()
+    }
+}
 
 impl EngineInit for Backtest {
     /// 初始化交易对
@@ -223,8 +231,13 @@ fn new(mut config: BacktestConfig) -> Result<Arc<Backtest>> {
         positions: Default::default(),
         orders: Default::default(),
     }));
+    let trade_time = Arc::new(Mutex::new(config.begin));
 
-    Ok(Arc::new(Backtest { config, account }))
+    Ok(Arc::new(Backtest {
+        config,
+        account,
+        trade_time,
+    }))
 }
 
 pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<()> {
