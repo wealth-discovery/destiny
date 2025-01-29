@@ -35,6 +35,7 @@ pub struct BacktestConfig {
     pub slippage_rate: f64,
 }
 
+#[allow(dead_code)]
 pub struct Backtest {
     config: Arc<BacktestConfig>,
     account: Arc<Mutex<Account>>,
@@ -90,6 +91,7 @@ impl EngineInit for Backtest {
 }
 
 #[async_trait]
+#[allow(unused_variables)]
 impl EngineTrade for Backtest {
     /// 市价开多
     async fn open_long_market(&self, symbol: &str, size: f64) -> Result<String> {
@@ -173,6 +175,7 @@ impl EngineTrade for Backtest {
     }
 }
 
+#[allow(unused_variables)]
 impl EngineAccount for Backtest {
     /// 获取保证金
     fn cash(&self) -> Cash {
@@ -184,6 +187,7 @@ impl EngineAccount for Backtest {
     }
 }
 
+#[allow(unused_variables)]
 impl EngineMarket for Backtest {
     /// 获取交易对
     fn symbol(&self, symbol: &str) -> Result<Symbol> {
