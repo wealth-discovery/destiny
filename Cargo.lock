@@ -927,6 +927,7 @@ dependencies = [
  "futures",
  "sqlx",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

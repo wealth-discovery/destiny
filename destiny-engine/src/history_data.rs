@@ -4,6 +4,7 @@ use aws_config::{meta::region::RegionProviderChain, BehaviorVersion, Region};
 use destiny_helpers::prelude::*;
 
 pub async fn sync_file_list() -> Result<()> {
+    tracing::info!("sync file list");
     let dao = Dao::new(&cache_dir()?.join("market_data"), "meta.db").await?;
     dao.file_meta_init().await?;
 
@@ -34,6 +35,7 @@ pub async fn sync_file_list() -> Result<()> {
             let update_time = ms_to_date(content.last_modified.unwrap().to_millis()?)?;
             dao.file_meta_sync(symbol, day, hour, path, update_time)
                 .await?;
+            tracing::info!("sync file meta: {:?}", path);
         }
         continuation_token = response.next_continuation_token().map(|s| s.to_string());
         if continuation_token.is_none() {
