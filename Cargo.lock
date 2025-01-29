@@ -941,6 +941,7 @@ dependencies = [
  "homedir",
  "sqlx",
  "time",
+ "tokio",
  "tracing",
  "tracing-appender",
  "tracing-subscriber",

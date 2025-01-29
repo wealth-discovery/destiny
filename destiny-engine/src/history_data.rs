@@ -2,6 +2,10 @@ use crate::dao::Dao;
 use anyhow::Result;
 use aws_config::{meta::region::RegionProviderChain, BehaviorVersion, Region};
 use destiny_helpers::prelude::*;
+use tokio::{
+    fs::{create_dir_all, remove_file, File},
+    io::AsyncWriteExt,
+};
 use tracing::instrument;
 
 #[instrument(name = "SyncFileList", skip_all)]
@@ -61,12 +65,41 @@ pub async fn sync_file_list() -> Result<()> {
 
 #[instrument(name = "DownloadFiles", skip_all)]
 pub async fn download_files(symbol: &str) -> Result<()> {
-    let dao = Dao::new(&cache_dir()?.join("market_data"), "meta.db").await?;
+    let market_data_dir = cache_dir()?.join("market_data");
+    let dao = Dao::new(&market_data_dir, "meta.db").await?;
     dao.market_file_meta_init().await?;
 
-    let file_metas = dao.market_file_meta_get_by_symbol(symbol).await?;
+    let config = aws_config::defaults(BehaviorVersion::latest())
+        .region(RegionProviderChain::default_provider().or_else(Region::new("us-east-1")))
+        .no_credentials()
+        .load()
+        .await;
+    let client = aws_sdk_s3::Client::new(&config);
+
+    let file_metas = dao.market_file_meta_get_unsync_by_symbol(symbol).await?;
     for file_meta in file_metas {
-        tracing::info!("{:?}", file_meta);
+        let response = client
+            .get_object()
+            .bucket("hyperliquid-archive")
+            .key(file_meta.path)
+            .send()
+            .await?;
+
+        let symbol_dir = market_data_dir.join(file_meta.symbol);
+        create_dir_all(&symbol_dir).await?;
+        let save_file = symbol_dir.join(format!(
+            "{}-{:02}.lz4",
+            file_meta.day.format("%Y%m%d"),
+            file_meta.hour
+        ));
+        if save_file.exists() {
+            remove_file(&save_file).await?;
+        }
+        let mut file = File::create(&save_file).await?;
+        file.write_all(response.body().bytes().expect("body is none"))
+            .await?;
+        dao.market_file_meta_update_local_time(file_meta.id, file_meta.update_time)
+            .await?;
     }
 
     Ok(())

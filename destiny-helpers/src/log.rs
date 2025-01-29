@@ -1,6 +1,7 @@
 use crate::path::cache_dir;
 use anyhow::Result;
 use derive_builder::Builder;
+use tokio::fs::create_dir_all;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{fmt::time::FormatTime, layer::SubscriberExt, Layer};
 
@@ -26,9 +27,9 @@ pub struct LogConfig {
     pub targets: Vec<String>,
 }
 
-pub fn init_log(config: LogConfig) -> Result<()> {
+pub async fn init_log(config: LogConfig) -> Result<()> {
     let dir = cache_dir()?.join("logs");
-    std::fs::create_dir_all(&dir)?;
+    create_dir_all(&dir).await?;
 
     let appender = tracing_appender::rolling::daily(dir, "log");
     let (writer, file_guard) = tracing_appender::non_blocking(appender);

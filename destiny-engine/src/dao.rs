@@ -4,13 +4,15 @@ use destiny_helpers::prelude::*;
 use destiny_types::models::MarketFileMeta;
 use sqlx::{Pool, Sqlite};
 use std::path::PathBuf;
+use tokio::fs::create_dir_all;
 
 pub struct Dao(Pool<Sqlite>);
 
 impl Dao {
     pub async fn new(path: &PathBuf, file_name: &str) -> Result<Self> {
         let dir = cache_dir()?.join(path);
-        std::fs::create_dir_all(&dir)?;
+        create_dir_all(&dir).await?;
+
         let db = open_db(&dir.join(file_name)).await?;
         Ok(Self(db))
     }
@@ -77,14 +79,16 @@ impl Dao {
         Ok(())
     }
 
-    pub async fn market_file_meta_get_by_symbol(
+    pub async fn market_file_meta_get_unsync_by_symbol(
         &self,
         symbol: &str,
     ) -> Result<Vec<MarketFileMeta>> {
-        let result = sqlx::query_as("select * from market_file_meta where symbol = ?")
-            .bind(symbol)
-            .fetch_all(&self.0)
-            .await?;
+        let result = sqlx::query_as(
+            "select * from market_file_meta where symbol = ? and (local_time is null or update_time != local_time)",
+        )
+        .bind(symbol)
+        .fetch_all(&self.0)
+        .await?;
 
         Ok(result)
     }

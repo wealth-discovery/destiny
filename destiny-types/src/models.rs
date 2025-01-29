@@ -1,5 +1,5 @@
 use crate::enums::*;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use std::collections::HashMap;
 
 /// 订单
@@ -92,7 +92,7 @@ pub struct MarketFileMeta {
     /// 交易对
     pub symbol: String,
     /// 日期
-    pub day: DateTime<Utc>,
+    pub day: NaiveDate,
     /// 小时
     pub hour: i32,
     /// 路径
