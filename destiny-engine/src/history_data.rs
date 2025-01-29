@@ -84,22 +84,26 @@ pub async fn download_files(symbol: &str) -> Result<()> {
             .key(file_meta.path)
             .send()
             .await?;
+        let body = response.body.collect().await?;
 
-        let symbol_dir = market_data_dir.join(file_meta.symbol);
+        let symbol_dir = market_data_dir.join(&file_meta.symbol);
         create_dir_all(&symbol_dir).await?;
-        let save_file = symbol_dir.join(format!(
+        let file_name = format!(
             "{}-{:02}.lz4",
             file_meta.day.format("%Y%m%d"),
             file_meta.hour
-        ));
+        );
+        let save_file = symbol_dir.join(&file_name);
         if save_file.exists() {
             remove_file(&save_file).await?;
         }
         let mut file = File::create(&save_file).await?;
-        file.write_all(response.body().bytes().expect("body is none"))
-            .await?;
+        file.write_all(&body.into_bytes()).await?;
+
         dao.market_file_meta_update_local_time(file_meta.id, file_meta.update_time)
             .await?;
+
+        tracing::info!("symbol({}), file({})", file_meta.symbol, file_name);
     }
 
     Ok(())
