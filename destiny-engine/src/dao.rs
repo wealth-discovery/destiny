@@ -81,11 +81,10 @@ impl Dao {
         &self,
         symbol: &str,
     ) -> Result<Vec<MarketFileMeta>> {
-        let mut query =
-            sqlx::QueryBuilder::<Sqlite>::new("select * from market_file_meta where symbol = ?");
-        query.push_bind(symbol);
-
-        let result = query.build_query_as().fetch_all(&self.0).await?;
+        let result = sqlx::query_as("select * from market_file_meta where symbol = ?")
+            .bind(symbol)
+            .fetch_all(&self.0)
+            .await?;
 
         Ok(result)
     }
@@ -95,13 +94,11 @@ impl Dao {
         id: i64,
         local_time: DateTime<Utc>,
     ) -> Result<()> {
-        let mut query = sqlx::QueryBuilder::<Sqlite>::new(
-            "update market_file_meta set local_time = ? where id = ?",
-        );
-        query.push_bind(local_time);
-        query.push_bind(id);
-
-        query.build().execute(&self.0).await?;
+        sqlx::query("update market_file_meta set local_time = ? where id = ?")
+            .bind(local_time)
+            .bind(id)
+            .execute(&self.0)
+            .await?;
 
         Ok(())
     }
