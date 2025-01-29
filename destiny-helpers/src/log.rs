@@ -10,7 +10,7 @@ impl FormatTime for LocalTimer {
         let now = chrono::Utc::now().with_timezone(
             &chrono::FixedOffset::east_opt(8 * 3600).expect("failed to create timezone offset"),
         );
-        write!(w, "{}", now.format("%Y-%m-%d %H:%M:%S"))
+        write!(w, "{}", now.format("%Y-%m-%d %H:%M:%S.%3f"))
     }
 }
 
@@ -46,7 +46,11 @@ pub fn init_log() -> Result<()> {
         .with_thread_names(false)
         .with_filter(LevelFilter::TRACE);
 
+    let targets =
+        tracing_subscriber::filter::Targets::new().with_target("destiny_", LevelFilter::TRACE);
+
     let collector = tracing_subscriber::registry()
+        .with(targets)
         .with(file_layer)
         .with(std_layer);
 
