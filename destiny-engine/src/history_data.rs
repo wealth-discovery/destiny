@@ -2,10 +2,8 @@ use crate::dao::Dao;
 use anyhow::Result;
 use aws_config::{meta::region::RegionProviderChain, BehaviorVersion, Region};
 use destiny_helpers::prelude::*;
-use tokio::{
-    fs::{create_dir_all, remove_file, File},
-    io::AsyncWriteExt,
-};
+use std::{fs::File, io::Write};
+use tokio::fs::{create_dir_all, remove_file};
 use tracing::instrument;
 
 #[instrument(name = "SyncFileList", skip_all)]
@@ -88,22 +86,38 @@ pub async fn download_files(symbol: &str) -> Result<()> {
 
         let symbol_dir = market_data_dir.join(&file_meta.symbol);
         create_dir_all(&symbol_dir).await?;
-        let file_name = format!(
+        let lz4_file_name = format!(
             "{}-{:02}.lz4",
             file_meta.day.format("%Y%m%d"),
             file_meta.hour
         );
-        let save_file = symbol_dir.join(&file_name);
-        if save_file.exists() {
-            remove_file(&save_file).await?;
+        let lz4_save_file = symbol_dir.join(&lz4_file_name);
+        if lz4_save_file.exists() {
+            remove_file(&lz4_save_file).await?;
         }
-        let mut file = File::create(&save_file).await?;
-        file.write_all(&body.into_bytes()).await?;
+        let mut lz4_file = File::create(&lz4_save_file)?;
+        lz4_file.write_all(&body.into_bytes())?;
+        drop(lz4_file);
+
+        let lz4_file = File::open(&lz4_save_file)?;
+        let mut lz4_decode = lz4::Decoder::new(lz4_file)?;
+
+        let csv_file_name = format!(
+            "{}-{:02}.csv",
+            file_meta.day.format("%Y%m%d"),
+            file_meta.hour
+        );
+        let csv_save_file = symbol_dir.join(&csv_file_name);
+        if csv_save_file.exists() {
+            remove_file(&csv_save_file).await?;
+        }
+        let mut csv_file = File::create(&csv_save_file)?;
+        std::io::copy(&mut lz4_decode, &mut csv_file)?;
 
         dao.market_file_meta_update_local_time(file_meta.id, file_meta.update_time)
             .await?;
 
-        tracing::info!("symbol({}), file({})", file_meta.symbol, file_name);
+        tracing::info!("symbol({}), file({})", file_meta.symbol, lz4_file_name);
     }
 
     Ok(())

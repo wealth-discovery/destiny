@@ -55,3 +55,4 @@ sqlx = { version = "0.8", features = [
     "macros",
     "chrono",
 ] }
+lz4 = { version = "1.28" }

@@ -21,3 +21,4 @@ aws-sdk-s3 = { workspace = true }
 sqlx = { workspace = true }
 futures = { workspace = true }
 tracing = { workspace = true }
+lz4 = { workspace = true }
