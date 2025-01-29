@@ -24,6 +24,13 @@ pub fn init_log() -> Result<()> {
         .compact()
         .with_level(true)
         .with_writer(writer)
+        .with_timer(LocalTimer)
+        .with_ansi(false)
+        .with_target(false)
+        .with_file(false)
+        .with_line_number(false)
+        .with_thread_ids(false)
+        .with_thread_names(false)
         .with_filter(LevelFilter::INFO);
 
     let (writer, std_guard) = tracing_appender::non_blocking(std::io::stdout());
@@ -32,6 +39,11 @@ pub fn init_log() -> Result<()> {
         .with_level(true)
         .with_writer(writer)
         .with_timer(LocalTimer)
+        .with_target(false)
+        .with_file(false)
+        .with_line_number(false)
+        .with_thread_ids(false)
+        .with_thread_names(false)
         .with_filter(LevelFilter::TRACE);
 
     let collector = tracing_subscriber::registry()
