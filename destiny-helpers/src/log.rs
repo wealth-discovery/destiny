@@ -20,7 +20,6 @@ pub fn init_log() -> Result<()> {
 
     let appender = tracing_appender::rolling::daily(dir, "log");
     let (writer, file_guard) = tracing_appender::non_blocking(appender);
-
     let file_layer = tracing_subscriber::fmt::layer()
         .compact()
         .with_level(true)
@@ -28,7 +27,6 @@ pub fn init_log() -> Result<()> {
         .with_filter(LevelFilter::INFO);
 
     let (writer, std_guard) = tracing_appender::non_blocking(std::io::stdout());
-
     let std_layer = tracing_subscriber::fmt::layer()
         .compact()
         .with_level(true)
