@@ -29,6 +29,7 @@ destiny-types = { path = "./destiny-types" }
 tokio = { version = "1", features = ["full"] }
 anyhow = { version = "1" }
 tracing = { version = "0.1" }
+tracing-appender = { version = "0.2" }
 tracing-subscriber = { version = "0.3", features = ["local-time", "json"] }
 chrono = { version = "0.4" }
 time = { version = "0.3", features = ["macros", "formatting"] }
