@@ -19,16 +19,16 @@ pub fn init_log() -> Result<()> {
     std::fs::create_dir_all(&dir)?;
 
     let appender = tracing_appender::rolling::daily(dir, "log");
-    let (writer, guard) = tracing_appender::non_blocking(appender);
-    std::mem::forget(guard);
+    let (writer, file_guard) = tracing_appender::non_blocking(appender);
+
     let file_layer = tracing_subscriber::fmt::layer()
         .compact()
         .with_level(true)
         .with_writer(writer)
         .with_filter(LevelFilter::INFO);
 
-    let (writer, guard) = tracing_appender::non_blocking(std::io::stdout());
-    std::mem::forget(guard);
+    let (writer, std_guard) = tracing_appender::non_blocking(std::io::stdout());
+
     let std_layer = tracing_subscriber::fmt::layer()
         .compact()
         .with_level(true)
@@ -41,6 +41,9 @@ pub fn init_log() -> Result<()> {
         .with(std_layer);
 
     tracing::subscriber::set_global_default(collector).expect("failed to set global default");
+
+    std::mem::forget(file_guard);
+    std::mem::forget(std_guard);
 
     Ok(())
 }
