@@ -7,5 +7,5 @@ pub fn home_dir() -> Result<PathBuf> {
 }
 
 pub fn cache_dir() -> Result<PathBuf> {
-    Ok(home_dir()?.join(".bagua"))
+    Ok(home_dir()?.join("destiny"))
 }

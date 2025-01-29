@@ -1,5 +1,5 @@
 use crate::enums::*;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use std::collections::HashMap;
 
 /// 订单
@@ -82,4 +82,23 @@ pub struct Account {
     pub contract_frozen_margin: f64,
     /// 订单
     pub orders: HashMap<String, Order>,
+}
+
+/// 文件元数据
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct MarketFileMeta {
+    /// ID
+    pub id: i64,
+    /// 交易对
+    pub symbol: String,
+    /// 日期
+    pub day: NaiveDate,
+    /// 小时
+    pub hour: i32,
+    /// 路径
+    pub path: String,
+    /// 更新时间
+    pub update_time: DateTime<Utc>,
+    /// 本地时间
+    pub local_time: Option<DateTime<Utc>>,
 }
