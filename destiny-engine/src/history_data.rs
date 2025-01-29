@@ -1,4 +1,4 @@
-use anyhow::{bail, ensure, Result};
+use anyhow::{bail, Result};
 use async_zip::base::read::seek::ZipFileReader;
 use destiny_helpers::path::cache_dir;
 use destiny_types::enums::KlineInterval;
@@ -12,6 +12,7 @@ use tracing::instrument;
 
 const DOWNLOAD_PREFIX: &str = "https://data.binance.vision/data/futures/um/monthly";
 
+#[derive(Debug)]
 pub enum SyncHistoryMeta {
     AggTrades {
         symbol: String,
@@ -300,7 +301,7 @@ impl SyncHistoryMeta {
     }
 }
 
-#[instrument(name = "SyncHistoryData", skip_all)]
+#[instrument(name = "SyncHistoryData")]
 pub async fn sync(meta: SyncHistoryMeta) -> Result<()> {
     let save_path = cache_dir()?.join("history_data").join(meta.save_path());
     if !save_path.exists() {

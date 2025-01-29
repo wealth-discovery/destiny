@@ -4,6 +4,7 @@ use sqlx::{Pool, Sqlite};
 use std::path::PathBuf;
 use tokio::fs::create_dir_all;
 
+#[allow(dead_code)]
 pub struct Dao(Pool<Sqlite>);
 
 impl Dao {
