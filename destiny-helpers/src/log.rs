@@ -18,8 +18,11 @@ pub fn init_log() -> Result<()> {
     std::fs::create_dir_all(&dir)?;
 
     let file_appender = tracing_appender::rolling::daily(dir, "message.log");
-    let (file_appender_non_blocking, guard) = tracing_appender::non_blocking(file_appender);
-    std::mem::forget(guard);
+    let (file_appender_non_blocking, file_guard) = tracing_appender::non_blocking(file_appender);
+    std::mem::forget(file_guard);
+
+    let (stdout_non_blocking, stdout_guard) = tracing_appender::non_blocking(std::io::stdout());
+    std::mem::forget(stdout_guard);
 
     let format = tracing_subscriber::fmt::format()
         .with_level(true)
@@ -28,7 +31,7 @@ pub fn init_log() -> Result<()> {
 
     tracing_subscriber::fmt()
         .with_max_level(Level::TRACE)
-        .with_writer(std::io::stdout)
+        .with_writer(stdout_non_blocking)
         .with_writer(file_appender_non_blocking)
         .with_ansi(false)
         .event_format(format)
