@@ -17,7 +17,7 @@ pub fn init_log() -> Result<()> {
     let dir = cache_dir()?.join("logs");
     std::fs::create_dir_all(&dir)?;
 
-    let file_appender = tracing_appender::rolling::daily(dir, "message.log");
+    let file_appender = tracing_appender::rolling::daily(dir, "log");
     let (file_appender_non_blocking, file_guard) = tracing_appender::non_blocking(file_appender);
     std::mem::forget(file_guard);
 
