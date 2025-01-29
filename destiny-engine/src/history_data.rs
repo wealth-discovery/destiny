@@ -59,6 +59,7 @@ pub async fn sync_file_list() -> Result<()> {
     Ok(())
 }
 
+#[instrument(name = "DownloadFiles", skip_all)]
 pub async fn download_files(symbol: &str) -> Result<()> {
     let dao = Dao::new(&cache_dir()?.join("market_data"), "meta.db").await?;
     dao.market_file_meta_init().await?;
