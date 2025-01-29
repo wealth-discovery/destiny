@@ -459,6 +459,7 @@ dependencies = [
  "destiny-helpers",
  "destiny-types",
  "futures",
+ "parking_lot",
  "reqwest",
  "sqlx",
  "strum",

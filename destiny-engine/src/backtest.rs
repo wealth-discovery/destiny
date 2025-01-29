@@ -1,11 +1,17 @@
-use crate::traits::*;
+use crate::{history_data, traits::*};
 use anyhow::{ensure, Result};
 use async_trait::async_trait;
-use chrono::{DateTime, Duration, DurationRound, Utc};
+use chrono::{
+    DateTime, Datelike, Duration, DurationRound, Months, NaiveDate, NaiveDateTime, NaiveTime,
+    SubsecRound, TimeZone, Utc,
+};
 use derive_builder::Builder;
 use destiny_helpers::prelude::*;
 use destiny_types::prelude::*;
+use parking_lot::Mutex;
 use std::sync::Arc;
+use strum::IntoEnumIterator;
+use tracing::instrument;
 
 /// 回测配置
 #[derive(Builder)]
@@ -29,9 +35,9 @@ pub struct BacktestConfig {
     pub slippage_rate: f64,
 }
 
-#[allow(dead_code)]
 pub struct Backtest {
     config: Arc<BacktestConfig>,
+    account: Arc<Mutex<Account>>,
 }
 
 impl Engine for Backtest {}
@@ -41,6 +47,36 @@ impl EngineBasic for Backtest {}
 impl EngineInit for Backtest {
     /// 初始化交易对
     fn init_symbol(&self, symbol: &str) -> Result<()> {
+        ensure!(
+            !self.account.lock().symbols.contains_key(symbol),
+            "symbol already exists: {}",
+            symbol
+        );
+        self.account.lock().symbols.insert(
+            symbol.to_string(),
+            Symbol {
+                symbol: symbol.to_string(),
+                rule: SymbolRule {
+                    enable: true,
+                    price_min: 1e-8,
+                    price_max: 1e8,
+                    price_tick: 1e-8,
+                    size_min: 1e-8,
+                    size_max: 1e8,
+                    size_tick: 1e-8,
+                    cash_min: 1e-8,
+                    order_max: 200,
+                },
+                index: SymbolIndex {
+                    mark_price: 0.,
+                    index_price: 0.,
+                    last_price: 0.,
+                    settlement_price: 0.,
+                    next_settlement_time: Default::default(),
+                    time: Default::default(),
+                },
+            },
+        );
         Ok(())
     }
 }
@@ -175,15 +211,126 @@ fn new(mut config: BacktestConfig) -> Result<Arc<Backtest>> {
         "slippage rate must be greater than 0"
     );
 
-    Ok(Arc::new(Backtest {
-        config: Arc::new(config),
-    }))
+    let config = Arc::new(config);
+
+    let account = Arc::new(Mutex::new(Account {
+        cash: Cash {
+            size: config.cash,
+            available: config.cash,
+            frozen: 0.,
+        },
+        symbols: Default::default(),
+        positions: Default::default(),
+        orders: Default::default(),
+    }));
+
+    Ok(Arc::new(Backtest { config, account }))
 }
 
 pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<()> {
     let backtest = new(config)?;
+
     strategy.on_init(backtest.clone()).await?;
+
+    ensure!(
+        backtest.account.lock().symbols.len() > 0,
+        "no symbols initialized"
+    );
+
+    let symbols = backtest
+        .account
+        .lock()
+        .symbols
+        .keys()
+        .cloned()
+        .collect::<Vec<String>>();
+
+    sync_history_data(&symbols).await?;
+
     strategy.on_start(backtest.clone()).await?;
     strategy.on_stop(backtest.clone()).await?;
+    Ok(())
+}
+
+#[instrument(name = "SyncHistoryData")]
+async fn sync_history_data(symbols: &[String]) -> Result<()> {
+    let mut start = Utc.from_utc_datetime(&NaiveDateTime::new(
+        NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+        NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
+    ));
+    let end = now()
+        .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
+        .unwrap()
+        .with_day(1)
+        .unwrap()
+        - Duration::days(1);
+
+    while start <= end {
+        for symbol in symbols {
+            history_data::sync(history_data::SyncHistoryMeta::agg_trades(
+                &symbol,
+                start.year() as i64,
+                start.month() as i64,
+            ))
+            .await?;
+
+            history_data::sync(history_data::SyncHistoryMeta::book_ticker(
+                &symbol,
+                start.year() as i64,
+                start.month() as i64,
+            ))
+            .await?;
+
+            history_data::sync(history_data::SyncHistoryMeta::funding_rate(
+                &symbol,
+                start.year() as i64,
+                start.month() as i64,
+            ))
+            .await?;
+
+            history_data::sync(history_data::SyncHistoryMeta::trades(
+                &symbol,
+                start.year() as i64,
+                start.month() as i64,
+            ))
+            .await?;
+
+            for interval in KlineInterval::iter() {
+                history_data::sync(history_data::SyncHistoryMeta::index_price_klines(
+                    &symbol,
+                    interval,
+                    start.year() as i64,
+                    start.month() as i64,
+                ))
+                .await?;
+
+                history_data::sync(history_data::SyncHistoryMeta::klines(
+                    &symbol,
+                    interval,
+                    start.year() as i64,
+                    start.month() as i64,
+                ))
+                .await?;
+
+                history_data::sync(history_data::SyncHistoryMeta::mark_price_klines(
+                    &symbol,
+                    interval,
+                    start.year() as i64,
+                    start.month() as i64,
+                ))
+                .await?;
+
+                history_data::sync(history_data::SyncHistoryMeta::premium_index_klines(
+                    &symbol,
+                    interval,
+                    start.year() as i64,
+                    start.month() as i64,
+                ))
+                .await?;
+            }
+        }
+        start = start + Months::new(1);
+    }
+
     Ok(())
 }
