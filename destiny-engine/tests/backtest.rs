@@ -28,8 +28,8 @@ impl Strategy for BacktestStrategy {
 #[tokio::test]
 async fn test_backtest() -> Result<()> {
     let config = BacktestConfigBuilder::default()
-        .begin(str_to_date("2024-01-01T00:00:00Z")?)
-        .end(str_to_date("2024-01-02T00:00:00Z")?)
+        .begin(str_to_date("20240101")?)
+        .end(str_to_date("20240102")?)
         .build()?;
 
     run_backtest(config, Arc::new(BacktestStrategy)).await?;

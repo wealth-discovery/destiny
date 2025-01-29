@@ -3,9 +3,9 @@ use sqlx::{
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
     Pool, Sqlite,
 };
-use std::{path::PathBuf, str::FromStr};
+use std::{path::Path, str::FromStr};
 
-pub async fn open_db(path: &PathBuf) -> Result<Pool<Sqlite>> {
+pub async fn open_db(path: &Path) -> Result<Pool<Sqlite>> {
     let options =
         SqliteConnectOptions::from_str(format!("sqlite://{}", path.to_string_lossy()).as_str())?
             .create_if_missing(true);
