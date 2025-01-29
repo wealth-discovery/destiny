@@ -38,9 +38,9 @@ pub async fn sync_file_list() -> Result<()> {
             tracing::info!(
                 "sync file meta: symbol({}), day({}), hour({}), update_time({}), path({})",
                 symbol,
-                day,
+                day.format("%Y-%m-%d"),
                 hour,
-                update_time,
+                update_time.format("%Y-%m-%d %H:%M:%S"),
                 path
             );
         }

@@ -8,7 +8,7 @@ async fn test_sync_file_list() -> Result<()> {
         return Ok(());
     }
 
-    init_log(LogConfigBuilder::default().build()?)?;
+    init_log(LogConfigBuilder::default().save_file(false).build()?)?;
     history_data::sync_file_list().await?;
     Ok(())
 }
