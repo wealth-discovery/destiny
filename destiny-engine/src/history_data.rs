@@ -1,124 +1,340 @@
-use crate::dao::Dao;
-use anyhow::Result;
-use aws_config::{meta::region::RegionProviderChain, BehaviorVersion, Region};
-use destiny_helpers::prelude::*;
-use std::{fs::File, io::Write};
-use tokio::fs::{create_dir_all, remove_file};
+use anyhow::{bail, Result};
+use async_zip::base::read::seek::ZipFileReader;
+use destiny_helpers::path::cache_dir;
+use destiny_types::enums::KlineInterval;
+use futures::AsyncReadExt;
+use std::path::PathBuf;
+use tokio::{
+    fs::{create_dir_all, File},
+    io::{AsyncWriteExt, BufReader},
+};
 use tracing::instrument;
 
-#[instrument(name = "SyncFileList", skip_all)]
-pub async fn sync_file_list() -> Result<()> {
-    let dao = Dao::new(&cache_dir()?.join("market_data"), "meta.db").await?;
-    dao.market_file_meta_init().await?;
+const DOWNLOAD_PREFIX: &str = "https://data.binance.vision/data/futures/um/monthly";
 
-    let config = aws_config::defaults(BehaviorVersion::latest())
-        .region(RegionProviderChain::default_provider().or_else(Region::new("us-east-1")))
-        .no_credentials()
-        .load()
-        .await;
-    let client = aws_sdk_s3::Client::new(&config);
-
-    let mut continuation_token: Option<String> = None;
-
-    loop {
-        let response = client
-            .list_objects_v2()
-            .bucket("hyperliquid-archive")
-            .prefix("market_data/")
-            .set_continuation_token(continuation_token)
-            .send()
-            .await?;
-
-        for content in response.contents() {
-            let path = content.key().expect("key is none");
-            let split_key = path.split("/").collect::<Vec<&str>>();
-            let day = str_to_date(split_key[1])?;
-            let hour = split_key[2].parse::<i32>()?;
-            let symbol = split_key[4].split(".").next().expect("symbol is none");
-            let update_time = ms_to_date(
-                content
-                    .last_modified
-                    .expect("last_modified is none")
-                    .to_millis()?,
-            )?;
-            dao.market_file_meta_sync(symbol, day, hour, path, update_time)
-                .await?;
-            tracing::info!(
-                "symbol({}), day({}), hour({}), update_time({}), path({})",
-                symbol,
-                day.format("%Y-%m-%d"),
-                hour,
-                update_time.format("%Y-%m-%d %H:%M:%S"),
-                path
-            );
-        }
-        continuation_token = response.next_continuation_token().map(|s| s.to_string());
-        if continuation_token.is_none() {
-            break;
-        }
-    }
-
-    Ok(())
+#[derive(Debug)]
+pub enum SyncHistoryMeta {
+    AggTrades {
+        symbol: String,
+        year: i64,
+        month: i64,
+    },
+    BookTicker {
+        symbol: String,
+        year: i64,
+        month: i64,
+    },
+    FundingRate {
+        symbol: String,
+        year: i64,
+        month: i64,
+    },
+    IndexPriceKlines {
+        symbol: String,
+        interval: KlineInterval,
+        year: i64,
+        month: i64,
+    },
+    Klines {
+        symbol: String,
+        interval: KlineInterval,
+        year: i64,
+        month: i64,
+    },
+    MarkPriceKlines {
+        symbol: String,
+        interval: KlineInterval,
+        year: i64,
+        month: i64,
+    },
+    PremiumIndexKlines {
+        symbol: String,
+        interval: KlineInterval,
+        year: i64,
+        month: i64,
+    },
+    Trades {
+        symbol: String,
+        year: i64,
+        month: i64,
+    },
 }
 
-#[instrument(name = "DownloadFiles", skip_all)]
-pub async fn download_files(symbol: &str) -> Result<()> {
-    let market_data_dir = cache_dir()?.join("market_data");
-    let dao = Dao::new(&market_data_dir, "meta.db").await?;
-    dao.market_file_meta_init().await?;
-
-    let config = aws_config::defaults(BehaviorVersion::latest())
-        .region(RegionProviderChain::default_provider().or_else(Region::new("us-east-1")))
-        .no_credentials()
-        .load()
-        .await;
-    let client = aws_sdk_s3::Client::new(&config);
-
-    let file_metas = dao.market_file_meta_get_unsync_by_symbol(symbol).await?;
-    for file_meta in file_metas {
-        let response = client
-            .get_object()
-            .bucket("hyperliquid-archive")
-            .key(file_meta.path)
-            .send()
-            .await?;
-        let body = response.body.collect().await?;
-
-        let symbol_dir = market_data_dir.join(&file_meta.symbol);
-        create_dir_all(&symbol_dir).await?;
-        let lz4_file_name = format!(
-            "{}-{:02}.lz4",
-            file_meta.day.format("%Y%m%d"),
-            file_meta.hour
-        );
-        let lz4_save_file = symbol_dir.join(&lz4_file_name);
-        if lz4_save_file.exists() {
-            remove_file(&lz4_save_file).await?;
+impl SyncHistoryMeta {
+    pub fn url(&self) -> String {
+        match self {
+            SyncHistoryMeta::AggTrades {
+                symbol,
+                year,
+                month,
+            } => format!("{DOWNLOAD_PREFIX}/aggTrades/{symbol}/{symbol}-aggTrades-{year}-{month:02}.zip"),  
+            SyncHistoryMeta::BookTicker {
+                symbol,
+                year,
+                month,
+            } => format!("{DOWNLOAD_PREFIX}/bookTicker/{symbol}/{symbol}-bookTicker-{year}-{month:02}.zip"),  
+            SyncHistoryMeta::FundingRate {
+                symbol,
+                year,
+                month,
+            } => format!("{DOWNLOAD_PREFIX}/fundingRate/{symbol}/{symbol}-fundingRate-{year}-{month:02}.zip"),  
+            SyncHistoryMeta::IndexPriceKlines {
+                symbol,
+                interval,
+                year,
+                month,
+            } => format!("{DOWNLOAD_PREFIX}/indexPriceKlines/{symbol}/{interval}/{symbol}-{interval}-{year}-{month:02}.zip"),
+            SyncHistoryMeta::Klines {
+                symbol,
+                interval,
+                year,
+                month,
+            } =>  format!("{DOWNLOAD_PREFIX}/klines/{symbol}/{interval}/{symbol}-{interval}-{year}-{month:02}.zip"),
+            SyncHistoryMeta::MarkPriceKlines {
+                symbol,
+                interval,
+                year,
+                month,
+            } =>  format!("{DOWNLOAD_PREFIX}/markPriceKlines/{symbol}/{interval}/{symbol}-{interval}-{year}-{month:02}.zip"),
+            SyncHistoryMeta::PremiumIndexKlines {
+                symbol,
+                interval,
+                year,
+                month,
+            } =>  format!("{DOWNLOAD_PREFIX}/premiumIndexKlines/{symbol}/{interval}/{symbol}-{interval}-{year}-{month:02}.zip"), 
+            SyncHistoryMeta::Trades {
+                symbol,
+                year,
+                month,
+            } => format!("{DOWNLOAD_PREFIX}/trades/{symbol}/{symbol}-trades-{year}-{month:02}.zip"),  
         }
-        let mut lz4_file = File::create(&lz4_save_file)?;
-        lz4_file.write_all(&body.into_bytes())?;
-        drop(lz4_file);
-
-        let lz4_file = File::open(&lz4_save_file)?;
-        let mut lz4_decode = lz4::Decoder::new(lz4_file)?;
-
-        let csv_file_name = format!(
-            "{}-{:02}.csv",
-            file_meta.day.format("%Y%m%d"),
-            file_meta.hour
-        );
-        let csv_save_file = symbol_dir.join(&csv_file_name);
-        if csv_save_file.exists() {
-            remove_file(&csv_save_file).await?;
-        }
-        let mut csv_file = File::create(&csv_save_file)?;
-        std::io::copy(&mut lz4_decode, &mut csv_file)?;
-
-        dao.market_file_meta_update_local_time(file_meta.id, file_meta.update_time)
-            .await?;
-
-        tracing::info!("symbol({}), file({})", file_meta.symbol, lz4_file_name);
     }
+
+    pub fn save_path(&self) -> PathBuf {
+        match self {
+            SyncHistoryMeta::AggTrades {
+                symbol,
+                year: _,
+                month: _,
+            } => PathBuf::new().join(symbol).join("aggTrades"),
+            SyncHistoryMeta::BookTicker {
+                symbol,
+                year: _,
+                month: _,
+            } => PathBuf::new().join(symbol).join("bookTicker"),
+            SyncHistoryMeta::FundingRate {
+                symbol,
+                year: _,
+                month: _,
+            } => PathBuf::new().join(symbol).join("fundingRate"),
+            SyncHistoryMeta::IndexPriceKlines {
+                symbol,
+                interval,
+                year: _,
+                month: _,
+            } => PathBuf::new()
+                .join(symbol)
+                .join("indexPriceKlines")
+                .join(interval.to_string()),
+            SyncHistoryMeta::Klines {
+                symbol,
+                interval,
+                year: _,
+                month: _,
+            } => PathBuf::new()
+                .join(symbol)
+                .join("klines")
+                .join(interval.to_string()),
+            SyncHistoryMeta::MarkPriceKlines {
+                symbol,
+                interval,
+                year: _,
+                month: _,
+            } => PathBuf::new()
+                .join(symbol)
+                .join("markPriceKlines")
+                .join(interval.to_string()),
+            SyncHistoryMeta::PremiumIndexKlines {
+                symbol,
+                interval,
+                year: _,
+                month: _,
+            } => PathBuf::new()
+                .join(symbol)
+                .join("premiumIndexKlines")
+                .join(interval.to_string()),
+            SyncHistoryMeta::Trades {
+                symbol,
+                year: _,
+                month: _,
+            } => PathBuf::new().join(symbol).join("trades"),
+        }
+    }
+
+    pub fn save_file_name(&self) -> String {
+        match self {
+            SyncHistoryMeta::AggTrades {
+                symbol: _,
+                year,
+                month,
+            } => format!("{year}{month:02}.csv"),
+            SyncHistoryMeta::BookTicker {
+                symbol: _,
+                year,
+                month,
+            } => format!("{year}{month:02}.csv"),
+            SyncHistoryMeta::FundingRate {
+                symbol: _,
+                year,
+                month,
+            } => format!("{year}{month:02}.csv"),
+            SyncHistoryMeta::IndexPriceKlines {
+                symbol: _,
+                interval: _,
+                year,
+                month,
+            } => format!("{year}{month:02}.csv"),
+            SyncHistoryMeta::Klines {
+                symbol: _,
+                interval: _,
+                year,
+                month,
+            } => format!("{year}{month:02}.csv"),
+            SyncHistoryMeta::MarkPriceKlines {
+                symbol: _,
+                interval: _,
+                year,
+                month,
+            } => format!("{year}{month:02}.csv"),
+            SyncHistoryMeta::PremiumIndexKlines {
+                symbol: _,
+                interval: _,
+                year,
+                month,
+            } => format!("{year}{month:02}.csv"),
+            SyncHistoryMeta::Trades {
+                symbol: _,
+                year,
+                month,
+            } => format!("{year}{month:02}.csv"),
+        }
+    }
+}
+
+impl SyncHistoryMeta {
+    pub fn agg_trades(symbol: &str, year: i64, month: i64) -> Self {
+        Self::AggTrades {
+            symbol: symbol.to_string(),
+            year,
+            month,
+        }
+    }
+
+    pub fn book_ticker(symbol: &str, year: i64, month: i64) -> Self {
+        Self::BookTicker {
+            symbol: symbol.to_string(),
+            year,
+            month,
+        }
+    }
+
+    pub fn funding_rate(symbol: &str, year: i64, month: i64) -> Self {
+        Self::FundingRate {
+            symbol: symbol.to_string(),
+            year,
+            month,
+        }
+    }
+
+    pub fn index_price_klines(
+        symbol: &str,
+        interval: KlineInterval,
+        year: i64,
+        month: i64,
+    ) -> Self {
+        Self::IndexPriceKlines {
+            symbol: symbol.to_string(),
+            interval,
+            year,
+            month,
+        }
+    }
+
+    pub fn klines(symbol: &str, interval: KlineInterval, year: i64, month: i64) -> Self {
+        Self::Klines {
+            symbol: symbol.to_string(),
+            interval,
+            year,
+            month,
+        }
+    }
+
+    pub fn mark_price_klines(symbol: &str, interval: KlineInterval, year: i64, month: i64) -> Self {
+        Self::MarkPriceKlines {
+            symbol: symbol.to_string(),
+            interval,
+            year,
+            month,
+        }
+    }
+
+    pub fn premium_index_klines(
+        symbol: &str,
+        interval: KlineInterval,
+        year: i64,
+        month: i64,
+    ) -> Self {
+        Self::PremiumIndexKlines {
+            symbol: symbol.to_string(),
+            interval,
+            year,
+            month,
+        }
+    }
+
+    pub fn trades(symbol: &str, year: i64, month: i64) -> Self {
+        Self::Trades {
+            symbol: symbol.to_string(),
+            year,
+            month,
+        }
+    }
+}
+
+#[instrument(name = "SyncHistoryData")]
+pub async fn sync(meta: SyncHistoryMeta) -> Result<()> {
+    let save_path = cache_dir()?.join("history_data").join(meta.save_path());
+    if !save_path.exists() {
+        create_dir_all(&save_path).await?;
+    }
+
+    let save_file_path = save_path.join(meta.save_file_name());
+    if save_file_path.exists() {
+        tracing::info!("history data already exists: {}", meta.save_file_name());
+        return Ok(());
+    }
+
+    let request_url = meta.url();
+    let response = reqwest::get(request_url).await?;
+    if !response.status().is_success() {
+        if response.status().as_u16() == 404 {
+            tracing::warn!("history data not found: {}", meta.save_file_name());
+            return Ok(());
+        }
+        bail!("failed to download history data: {}", response.status());
+    }
+
+    let bytes = response.bytes().await?;
+    let reader = BufReader::new(std::io::Cursor::new(bytes));
+    let mut zip = ZipFileReader::with_tokio(reader).await?;
+    let mut csv_reader = zip.reader_with_entry(0).await?;
+    let mut csv_data = Vec::new();
+    csv_reader.read_to_end(&mut csv_data).await?;
+
+    let mut csv_file = File::create(save_file_path).await?;
+    csv_file.write_all(&csv_data).await?;
+    csv_file.shutdown().await?;
+    tracing::info!("download history data success: {}", meta.save_file_name());
 
     Ok(())
 }

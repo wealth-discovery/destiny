@@ -12,7 +12,7 @@ impl FormatTime for LocalTimer {
         let now = chrono::Utc::now().with_timezone(
             &chrono::FixedOffset::east_opt(8 * 3600).expect("failed to create timezone offset"),
         );
-        write!(w, "{}", now.format("%Y-%m-%d %H:%M:%S.%3f"))
+        write!(w, "{}", now.format("%Y-%m-%d %H:%M:%S.%6f"))
     }
 }
 
@@ -34,7 +34,7 @@ pub async fn init_log(config: LogConfig) -> Result<()> {
     let appender = tracing_appender::rolling::daily(dir, "log");
     let (writer, file_guard) = tracing_appender::non_blocking(appender);
     let file_layer = tracing_subscriber::fmt::layer()
-        .compact()
+        .pretty()
         .with_level(true)
         .with_writer(writer)
         .with_timer(LocalTimer)
@@ -52,7 +52,7 @@ pub async fn init_log(config: LogConfig) -> Result<()> {
 
     let (writer, std_guard) = tracing_appender::non_blocking(std::io::stdout());
     let std_layer = tracing_subscriber::fmt::layer()
-        .compact()
+        .pretty()
         .with_level(true)
         .with_writer(writer)
         .with_timer(LocalTimer)

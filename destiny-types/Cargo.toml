@@ -12,3 +12,4 @@ readme.workspace = true
 chrono = { workspace = true }
 serde = { workspace = true }
 sqlx = { workspace = true }
+strum = { workspace = true }
