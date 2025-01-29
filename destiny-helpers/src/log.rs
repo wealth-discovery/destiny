@@ -1,5 +1,6 @@
 use crate::path::cache_dir;
 use anyhow::Result;
+use derive_builder::Builder;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{fmt::time::FormatTime, layer::SubscriberExt, Layer};
 
@@ -14,7 +15,18 @@ impl FormatTime for LocalTimer {
     }
 }
 
-pub fn init_log() -> Result<()> {
+#[derive(Builder)]
+#[builder(setter(into))]
+pub struct LogConfig {
+    #[builder(default = true)]
+    pub show_std: bool,
+    #[builder(default = true)]
+    pub save_file: bool,
+    #[builder(default = vec![])]
+    pub targets: Vec<String>,
+}
+
+pub fn init_log(config: LogConfig) -> Result<()> {
     let dir = cache_dir()?.join("logs");
     std::fs::create_dir_all(&dir)?;
 
@@ -31,7 +43,11 @@ pub fn init_log() -> Result<()> {
         .with_line_number(false)
         .with_thread_ids(false)
         .with_thread_names(false)
-        .with_filter(LevelFilter::INFO);
+        .with_filter(if config.save_file {
+            LevelFilter::INFO
+        } else {
+            LevelFilter::OFF
+        });
 
     let (writer, std_guard) = tracing_appender::non_blocking(std::io::stdout());
     let std_layer = tracing_subscriber::fmt::layer()
@@ -44,10 +60,17 @@ pub fn init_log() -> Result<()> {
         .with_line_number(false)
         .with_thread_ids(false)
         .with_thread_names(false)
-        .with_filter(LevelFilter::TRACE);
+        .with_filter(if config.show_std {
+            LevelFilter::TRACE
+        } else {
+            LevelFilter::OFF
+        });
 
-    let targets =
+    let mut targets =
         tracing_subscriber::filter::Targets::new().with_target("destiny_", LevelFilter::TRACE);
+    for target in config.targets {
+        targets = targets.with_target(target, LevelFilter::TRACE);
+    }
 
     let collector = tracing_subscriber::registry()
         .with(targets)

@@ -936,6 +936,7 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "derive_builder",
  "destiny-types",
  "homedir",
  "sqlx",
