@@ -461,6 +461,7 @@ dependencies = [
  "futures",
  "reqwest",
  "sqlx",
+ "strum",
  "tokio",
  "tracing",
 ]

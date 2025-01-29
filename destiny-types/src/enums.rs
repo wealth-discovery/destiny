@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use strum::Display;
+use strum::{Display, EnumIter};
 
 /// 运行模式
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display)]
@@ -45,7 +45,7 @@ pub enum TradeSide {
 }
 
 /// K线周期
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display, EnumIter)]
 pub enum KlineInterval {
     /// 1分钟
     #[serde(rename = "1m")]
