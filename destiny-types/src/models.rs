@@ -136,11 +136,11 @@ pub struct SymbolIndex {
 
 /// K线
 #[derive(Debug, Clone)]
-pub struct Candle {
+pub struct Kline {
     /// 交易对
     pub symbol: String,
     /// 周期
-    pub period: Period,
+    pub interval: KlineInterval,
     /// 开盘时间
     pub open_time: DateTime<Utc>,
     /// 开盘价

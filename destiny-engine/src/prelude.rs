@@ -4,5 +4,6 @@ pub use crate::{
         BacktestConfigBuilderError,
     },
     dao::*,
+    history_data::*,
     traits::*,
 };

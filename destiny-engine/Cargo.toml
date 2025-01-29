@@ -19,3 +19,6 @@ derive_builder = { workspace = true }
 sqlx = { workspace = true }
 futures = { workspace = true }
 tracing = { workspace = true }
+reqwest = { workspace = true }
+csv-async = { workspace = true }
+async_zip = { workspace = true }
