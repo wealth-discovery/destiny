@@ -11,7 +11,7 @@ struct BacktestStrategy;
 impl Strategy for BacktestStrategy {
     async fn on_init(&self, engine: Arc<dyn Engine>) -> Result<()> {
         tracing::info!("on_init: {}", engine.now());
-        engine.init_symbol("TRUMPUSDT")?;
+        engine.init_symbol("ETHUSDT")?;
         Ok(())
     }
 

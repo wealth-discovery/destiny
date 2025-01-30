@@ -252,19 +252,19 @@ async fn sync_history_data(symbols: &[String]) -> Result<()> {
 
     while start <= end {
         for symbol in symbols {
-            history_data::sync(history_data::SyncHistoryMeta::agg_trades(
-                symbol,
-                start.year() as i64,
-                start.month() as i64,
-            ))
-            .await;
+            // history_data::sync(history_data::SyncHistoryMeta::agg_trades(
+            //     symbol,
+            //     start.year() as i64,
+            //     start.month() as i64,
+            // ))
+            // .await;
 
-            history_data::sync(history_data::SyncHistoryMeta::book_ticker(
-                symbol,
-                start.year() as i64,
-                start.month() as i64,
-            ))
-            .await;
+            // history_data::sync(history_data::SyncHistoryMeta::book_ticker(
+            //     symbol,
+            //     start.year() as i64,
+            //     start.month() as i64,
+            // ))
+            // .await;
 
             history_data::sync(history_data::SyncHistoryMeta::funding_rate(
                 symbol,
@@ -273,12 +273,12 @@ async fn sync_history_data(symbols: &[String]) -> Result<()> {
             ))
             .await;
 
-            history_data::sync(history_data::SyncHistoryMeta::trades(
-                symbol,
-                start.year() as i64,
-                start.month() as i64,
-            ))
-            .await;
+            // history_data::sync(history_data::SyncHistoryMeta::trades(
+            //     symbol,
+            //     start.year() as i64,
+            //     start.month() as i64,
+            // ))
+            // .await;
 
             for interval in KlineInterval::iter() {
                 history_data::sync(history_data::SyncHistoryMeta::index_price_klines(
