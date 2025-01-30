@@ -310,7 +310,64 @@ pub async fn sync(meta: SyncHistoryMeta) {
     }
 }
 
-#[instrument(name = "同步历史数据", skip_all)]
+impl SyncHistoryMeta {
+    pub fn desc(&self) -> String {
+        match self {
+            SyncHistoryMeta::AggTrades {
+                symbol,
+                year,
+                month,
+            } => format!("类型(聚合交易), 交易对({symbol}), 日期({year}-{month:02})"),
+            SyncHistoryMeta::BookTicker {
+                symbol,
+                year,
+                month,
+            } => format!("类型(盘口), 交易对({symbol}), 日期({year}-{month:02})"),
+            SyncHistoryMeta::FundingRate {
+                symbol,
+                year,
+                month,
+            } => format!("类型(资金费率), 交易对({symbol}), 日期({year}-{month:02})"),
+            SyncHistoryMeta::IndexPriceKlines {
+                symbol,
+                interval,
+                year,
+                month,
+            } => format!(
+                "类型(指数价格), 交易对({symbol}), 日期({year}-{month:02}), 周期({interval})"
+            ),
+            SyncHistoryMeta::Klines {
+                symbol,
+                interval,
+                year,
+                month,
+            } => format!("类型(K线), 交易对({symbol}), 日期({year}-{month:02}), 周期({interval})"),
+            SyncHistoryMeta::MarkPriceKlines {
+                symbol,
+                interval,
+                year,
+                month,
+            } => format!(
+                "类型(标记价格), 交易对({symbol}), 日期({year}-{month:02}), 周期({interval})"
+            ),
+            SyncHistoryMeta::PremiumIndexKlines {
+                symbol,
+                interval,
+                year,
+                month,
+            } => format!(
+                "类型(溢价指数), 交易对({symbol}), 日期({year}-{month:02}), 周期({interval})"
+            ),
+            SyncHistoryMeta::Trades {
+                symbol,
+                year,
+                month,
+            } => format!("类型(交易), 交易对({symbol}), 日期({year}-{month:02})"),
+        }
+    }
+}
+
+#[instrument(name = "同步历史数据", skip_all, fields(配置 = meta.desc()))]
 async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
     let save_path = cache_dir()?.join("history_data").join(meta.save_path());
     if !save_path.exists() {
