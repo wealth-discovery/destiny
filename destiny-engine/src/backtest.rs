@@ -237,7 +237,7 @@ pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<
     Ok(())
 }
 
-#[instrument(name = "同步历史数据")]
+#[instrument(name = "同步历史数据",fields(交易对 = format!("{:?}",symbols)))]
 async fn sync_history_data(symbols: &[String]) -> Result<()> {
     let mut start = Utc.from_utc_datetime(&NaiveDateTime::new(
         NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
