@@ -95,7 +95,7 @@ where
             Level::ERROR => "💥",
         };
 
-        let msg = format!("{icon} [{year}{month:02}{day:02}][{hour:02}{minute:02}{second:02}][{millis:03}][{micros:03}] - {message}\n");
+        let msg = format!("{icon} [{year}{month:02}{day:02}][{hour:02}{minute:02}{second:02}][{millis:03}][{micros:03}] {message} {event:?}\n");
 
         for out in self.writers.iter() {
             let mut write = out.clone();
