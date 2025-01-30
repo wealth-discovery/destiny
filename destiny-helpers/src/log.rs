@@ -1,7 +1,7 @@
 use crate::path::cache_dir;
 use anyhow::Result;
-use chrono::{Datelike, Timelike};
 use derive_builder::Builder;
+use nu_ansi_term::Color;
 use std::io::Write;
 use tokio::fs::create_dir_all;
 use tracing::{field::Visit, level_filters::LevelFilter, Level};
@@ -33,28 +33,33 @@ impl Visit for LogVisitor {
 }
 
 struct LogLayer {
-    writers: Vec<tracing_appender::non_blocking::NonBlocking>,
+    std_writer: Option<tracing_appender::non_blocking::NonBlocking>,
+    file_writer: Option<tracing_appender::non_blocking::NonBlocking>,
 }
 
 impl LogLayer {
     pub async fn new(show_std: bool, save_file: bool) -> Result<Self> {
-        let mut writers = vec![];
+        let mut std_writer = None;
         if show_std {
             let (writer, guard) = tracing_appender::non_blocking(std::io::stdout());
-            writers.push(writer);
+            std_writer = Some(writer);
             std::mem::forget(guard);
         }
 
+        let mut file_writer = None;
         if save_file {
             let dir = cache_dir()?.join("logs");
             create_dir_all(&dir).await?;
             let appender = tracing_appender::rolling::daily(dir, "log");
             let (writer, guard) = tracing_appender::non_blocking(appender);
-            writers.push(writer);
+            file_writer = Some(writer);
             std::mem::forget(guard);
         }
 
-        Ok(Self { writers })
+        Ok(Self {
+            std_writer,
+            file_writer,
+        })
     }
 }
 
@@ -67,7 +72,7 @@ where
         event: &tracing::Event<'_>,
         _ctx: tracing_subscriber::layer::Context<'_, S>,
     ) {
-        if self.writers.is_empty() {
+        if self.std_writer.is_none() && self.file_writer.is_none() {
             return;
         }
 
@@ -77,28 +82,45 @@ where
 
         static FIXED_OFFSET: chrono::FixedOffset =
             chrono::FixedOffset::east_opt(8 * 3600).expect("创建时区偏移失败");
-        let now = chrono::Utc::now().with_timezone(&FIXED_OFFSET);
-        let year = now.year();
-        let month = now.month();
-        let day = now.day();
-        let hour = now.hour();
-        let minute = now.minute();
-        let second = now.second();
-        let millis = now.timestamp_subsec_millis();
-        let micros = now.timestamp_subsec_micros() % 1000;
+        let now = chrono::Utc::now()
+            .with_timezone(&FIXED_OFFSET)
+            .format("%Y-%m-%d %H:%M:%S.%6f")
+            .to_string();
 
-        let icon = match *event.metadata().level() {
-            Level::TRACE => "🧬",
-            Level::DEBUG => "🔍",
-            Level::INFO => "💬",
-            Level::WARN => "🚨",
-            Level::ERROR => "💥",
+        let level = *event.metadata().level();
+
+        let topic = match level {
+            Level::TRACE => "轨迹",
+            Level::DEBUG => "调试",
+            Level::INFO => "消息",
+            Level::WARN => "警告",
+            Level::ERROR => "错误",
         };
 
-        let msg = format!("{icon} [{year}{month:02}{day:02}][{hour:02}{minute:02}{second:02}][{millis:03}][{micros:03}] {message} {event:?}\n");
+        let target = event.metadata().target().replace("::", ":");
+        let line = event.metadata().line().unwrap_or(0);
 
-        for out in self.writers.iter() {
-            let mut write = out.clone();
+        let msg = format!("[{topic}][{now}][{target}:{line}]> {message}\n");
+
+        if let Some(writer) = &self.std_writer {
+            let mut write = writer.clone();
+            write
+                .write_all(
+                    match level {
+                        Level::TRACE => Color::DarkGray.paint(&msg),
+                        Level::DEBUG => Color::Blue.paint(&msg),
+                        Level::INFO => Color::Green.paint(&msg),
+                        Level::WARN => Color::Purple.paint(&msg),
+                        Level::ERROR => Color::Red.paint(&msg),
+                    }
+                    .to_string()
+                    .as_bytes(),
+                )
+                .ok();
+        }
+
+        if let Some(writer) = &self.file_writer {
+            let mut write = writer.clone();
             write.write_all(msg.as_bytes()).ok();
         }
     }
