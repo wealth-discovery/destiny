@@ -54,11 +54,10 @@ impl EngineBasic for Backtest {
 }
 
 impl EngineInit for Backtest {
-    /// 初始化交易对
     fn init_symbol(&self, symbol: &str) -> Result<()> {
         ensure!(
             !self.account.lock().symbols.contains_key(symbol),
-            "symbol already exists: {}",
+            "重复初始化交易对: {}",
             symbol
         );
         self.account.lock().symbols.insert(
@@ -93,83 +92,63 @@ impl EngineInit for Backtest {
 #[async_trait]
 #[allow(unused_variables)]
 impl EngineTrade for Backtest {
-    /// 市价开多
     async fn open_long_market(&self, symbol: &str, size: f64) -> Result<String> {
         todo!()
     }
-    /// 限价开多
     async fn open_long_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
         todo!()
     }
-    /// 市价平多
     async fn close_long_market(&self, symbol: &str, size: f64) -> Result<String> {
         todo!()
     }
-    /// 限价平多
     async fn close_long_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
         todo!()
     }
-    /// 市价开空
     async fn open_short_market(&self, symbol: &str, size: f64) -> Result<String> {
         todo!()
     }
-    /// 限价开空
     async fn open_short_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
         todo!()
     }
-    /// 市价平空
     async fn close_short_market(&self, symbol: &str, size: f64) -> Result<String> {
         todo!()
     }
-    /// 限价平空
     async fn close_short_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
         todo!()
     }
-    /// 撤单
     async fn cancel_order(&self, symbol: &str, order_id: &str) -> Result<()> {
         todo!()
     }
-    /// 批量撤单
     async fn cancel_orders(&self, symbol: &str, order_ids: &[&str]) -> Result<()> {
         todo!()
     }
-    /// 设置杠杆倍率
     async fn set_leverage(&self, symbol: &str, leverage: u32) -> Result<()> {
         todo!()
     }
-    /// 获取杠杆倍率
     fn leverage(&self, symbol: &str) -> Result<u32> {
         todo!()
     }
-    /// 获取订单
     fn order(&self, symbol: &str, order_id: &str) -> Result<Option<Order>> {
         todo!()
     }
-    /// 获取交易对订单
     fn orders(&self, symbol: &str) -> Result<Vec<Order>> {
         todo!()
     }
-    /// 获取多头订单
     fn orders_long(&self, symbol: &str) -> Result<Vec<Order>> {
         todo!()
     }
-    /// 获取多头开仓订单
     fn orders_open_long(&self, symbol: &str) -> Result<Vec<Order>> {
         todo!()
     }
-    /// 获取多头平仓订单
     fn orders_close_long(&self, symbol: &str) -> Result<Vec<Order>> {
         todo!()
     }
-    /// 获取空头订单
     fn orders_short(&self, symbol: &str) -> Result<Vec<Order>> {
         todo!()
     }
-    /// 获取空头开仓订单
     fn orders_open_short(&self, symbol: &str) -> Result<Vec<Order>> {
         todo!()
     }
-    /// 获取空头平仓订单
     fn orders_close_short(&self, symbol: &str) -> Result<Vec<Order>> {
         todo!()
     }
@@ -177,11 +156,9 @@ impl EngineTrade for Backtest {
 
 #[allow(unused_variables)]
 impl EngineAccount for Backtest {
-    /// 获取保证金
     fn cash(&self) -> Cash {
         todo!()
     }
-    /// 获取持仓
     fn position(&self, symbol: &str) -> Result<SymbolPosition> {
         todo!()
     }
@@ -189,15 +166,12 @@ impl EngineAccount for Backtest {
 
 #[allow(unused_variables)]
 impl EngineMarket for Backtest {
-    /// 获取交易对
     fn symbol(&self, symbol: &str) -> Result<Symbol> {
         todo!()
     }
-    /// 获取交易规则
     fn symbol_rule(&self, symbol: &str) -> Result<SymbolRule> {
         todo!()
     }
-    /// 获取指数
     fn symbol_index(&self, symbol: &str) -> Result<SymbolIndex> {
         todo!()
     }
@@ -206,22 +180,16 @@ impl EngineMarket for Backtest {
 fn new(mut config: BacktestConfig) -> Result<Arc<Backtest>> {
     config.begin = config.begin.duration_trunc(Duration::minutes(1))?;
     config.end = config.end.duration_trunc(Duration::minutes(1))?;
-    ensure!(
-        config.begin < config.end,
-        "begin time must be less than end time"
-    );
+    ensure!(config.begin < config.end, "开始时间必须小于结束时间");
 
     config.cash = truncate_float(config.cash, 8, false);
-    ensure!(config.cash >= 0.0, "cash must be greater than 0");
+    ensure!(config.cash >= 0.0, "初始资金必须大于等于0");
 
     config.fee_rate_taker = truncate_float(config.fee_rate_taker, 8, false);
     config.fee_rate_maker = truncate_float(config.fee_rate_maker, 8, false);
 
     config.slippage_rate = truncate_float(config.slippage_rate, 8, false);
-    ensure!(
-        config.slippage_rate >= 0.0,
-        "slippage rate must be greater than 0"
-    );
+    ensure!(config.slippage_rate >= 0.0, "滑点率必须大于等于0");
 
     let config = Arc::new(config);
 
@@ -251,7 +219,7 @@ pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<
 
     ensure!(
         !backtest.account.lock().symbols.is_empty(),
-        "no symbols initialized"
+        "未初始化交易对"
     );
 
     let symbols = backtest
@@ -269,7 +237,7 @@ pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<
     Ok(())
 }
 
-#[instrument(name = "SyncHistoryData")]
+#[instrument(name = "同步历史数据")]
 async fn sync_history_data(symbols: &[String]) -> Result<()> {
     let mut start = Utc.from_utc_datetime(&NaiveDateTime::new(
         NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),

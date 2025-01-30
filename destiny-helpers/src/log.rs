@@ -9,10 +9,9 @@ struct LocalTimer;
 
 impl FormatTime for LocalTimer {
     fn format_time(&self, w: &mut tracing_subscriber::fmt::format::Writer<'_>) -> std::fmt::Result {
-        let now = chrono::Utc::now().with_timezone(
-            &chrono::FixedOffset::east_opt(8 * 3600).expect("failed to create timezone offset"),
-        );
-        write!(w, "{}", now.format("%Y-%m-%d %H:%M:%S.%6f"))
+        let now = chrono::Utc::now()
+            .with_timezone(&chrono::FixedOffset::east_opt(8 * 3600).expect("创建时区偏移失败"));
+        write!(w, "{}", now.format("%Y年%m月%d日%H时%M分%S秒%6f"))
     }
 }
 
@@ -26,7 +25,7 @@ pub struct LogConfig {
     /// 是否写入文件
     #[builder(default = true)]
     pub save_file: bool,
-    /// 可显示的包名, 默认显示 `destiny_` 开头的包
+    /// 可显示的包名, 默认显示 [`destiny_`] 开头的包
     #[builder(default = vec![])]
     pub targets: Vec<String>,
 }
@@ -84,7 +83,7 @@ pub async fn init_log(config: LogConfig) -> Result<()> {
         .with(file_layer)
         .with(std_layer);
 
-    tracing::subscriber::set_global_default(collector).expect("failed to set global default");
+    tracing::subscriber::set_global_default(collector)?;
 
     std::mem::forget(file_guard);
     std::mem::forget(std_guard);

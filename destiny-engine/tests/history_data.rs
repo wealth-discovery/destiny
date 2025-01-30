@@ -33,25 +33,25 @@ async fn test_sync_history_data() -> Result<()> {
     Ok(())
 }
 
-#[instrument(name = "DownloadAggTrades")]
+#[instrument(name = "下载聚合交易数据")]
 async fn download_agg_trades() -> Result<()> {
     sync_history_data(SyncHistoryMeta::agg_trades("BTCUSDT", 2020, 1)).await;
     Ok(())
 }
 
-#[instrument(name = "DownloadBookTicker")]
+#[instrument(name = "下载盘口数据")]
 async fn download_book_ticker() -> Result<()> {
     sync_history_data(SyncHistoryMeta::book_ticker("BTCUSDT", 2020, 1)).await;
     Ok(())
 }
 
-#[instrument(name = "DownloadFundingRate")]
+#[instrument(name = "下载资金费率数据")]
 async fn download_funding_rate() -> Result<()> {
     sync_history_data(SyncHistoryMeta::funding_rate("BTCUSDT", 2020, 1)).await;
     Ok(())
 }
 
-#[instrument(name = "DownloadIndexPriceKlines")]
+#[instrument(name = "下载指数价格数据")]
 async fn download_index_price_klines(interval: KlineInterval) -> Result<()> {
     sync_history_data(SyncHistoryMeta::index_price_klines(
         "BTCUSDT", interval, 2020, 1,
@@ -60,13 +60,13 @@ async fn download_index_price_klines(interval: KlineInterval) -> Result<()> {
     Ok(())
 }
 
-#[instrument(name = "DownloadKline")]
+#[instrument(name = "下载K线数据")]
 async fn download_kline(interval: KlineInterval) -> Result<()> {
     sync_history_data(SyncHistoryMeta::klines("BTCUSDT", interval, 2020, 1)).await;
     Ok(())
 }
 
-#[instrument(name = "DownloadMarkPriceKlines")]
+#[instrument(name = "下载标记价格数据")]
 async fn download_mark_price_klines(interval: KlineInterval) -> Result<()> {
     sync_history_data(SyncHistoryMeta::mark_price_klines(
         "BTCUSDT", interval, 2020, 1,
@@ -75,7 +75,7 @@ async fn download_mark_price_klines(interval: KlineInterval) -> Result<()> {
     Ok(())
 }
 
-#[instrument(name = "DownloadPremiumIndexKlines")]
+#[instrument(name = "下载溢价指数数据")]
 async fn download_premium_index_klines(interval: KlineInterval) -> Result<()> {
     sync_history_data(SyncHistoryMeta::premium_index_klines(
         "BTCUSDT", interval, 2020, 1,
@@ -84,7 +84,7 @@ async fn download_premium_index_klines(interval: KlineInterval) -> Result<()> {
     Ok(())
 }
 
-#[instrument(name = "DownloadTrades")]
+#[instrument(name = "下载逐笔成交数据")]
 async fn download_trades() -> Result<()> {
     sync_history_data(SyncHistoryMeta::trades("BTCUSDT", 2020, 1)).await;
     Ok(())

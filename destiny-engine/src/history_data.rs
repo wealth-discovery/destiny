@@ -310,7 +310,7 @@ pub async fn sync(meta: SyncHistoryMeta) {
     }
 }
 
-#[instrument(name = "SyncHistoryData")]
+#[instrument(name = "同步历史数据")]
 async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
     let save_path = cache_dir()?.join("history_data").join(meta.save_path());
     if !save_path.exists() {
@@ -319,20 +319,20 @@ async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
 
     let save_file_path = save_path.join(meta.save_file_name());
     if save_file_path.exists() {
-        tracing::info!("history data already exists: {}", meta.save_file_name());
+        tracing::info!("历史数据本地已存在");
         return Ok(());
     }
 
-    tracing::info!("start download history data: {}", meta.save_file_name());
+    tracing::info!("开始下载历史数据");
 
     let request_url = meta.url();
     let response = reqwest::get(request_url).await?;
     if !response.status().is_success() {
         if response.status().as_u16() == 404 {
-            tracing::warn!("history data not found: {}", meta.save_file_name());
+            tracing::warn!("获取的历史数据不存在");
             return Ok(());
         }
-        bail!("failed to download history data: {}", response.status());
+        bail!("下载历史数据失败: {}", response.status());
     }
 
     let bytes = response.bytes().await?;
@@ -345,7 +345,7 @@ async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
     let mut csv_file = File::create(save_file_path).await?;
     csv_file.write_all(&csv_data).await?;
     csv_file.shutdown().await?;
-    tracing::info!("download history data success: {}", meta.save_file_name());
+    tracing::info!("下载历史数据成功");
 
     Ok(())
 }

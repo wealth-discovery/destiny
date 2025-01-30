@@ -6,7 +6,7 @@ use sqlx::{
 use std::{path::Path, str::FromStr};
 
 /// 打开数据库
-/// <br> `path` 表示完整的文件路径, 例如: `/home/husky/data/db.sqlite`.
+/// <br> [`path`] 表示完整的文件路径, 例如: [`/home/husky/data/db.sqlite`].
 /// <br> 如果文件不存在, 则创建文件.
 pub async fn open_db(path: &Path) -> Result<Pool<Sqlite>> {
     let options =

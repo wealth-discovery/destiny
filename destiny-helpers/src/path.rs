@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 /// 获取用户主目录
 pub fn home_dir() -> Result<PathBuf> {
-    my_home()?.ok_or(anyhow!("user home directory not found"))
+    my_home()?.ok_or(anyhow!("用户主目录未找到"))
 }
 
 /// 获取缓存目录
