@@ -4,7 +4,7 @@ use chrono::{Datelike, Timelike};
 use derive_builder::Builder;
 use std::io::Write;
 use tokio::fs::create_dir_all;
-use tracing::{level_filters::LevelFilter, Level};
+use tracing::{field::Visit, level_filters::LevelFilter, Level};
 use tracing_subscriber::{layer::SubscriberExt, Layer};
 
 /// 日志配置
@@ -20,6 +20,16 @@ pub struct LogConfig {
     /// 可显示的包名, 默认显示 [`destiny_`] 开头的包
     #[builder(default = vec![])]
     pub targets: Vec<String>,
+}
+
+struct LogVisitor(Option<String>);
+
+impl Visit for LogVisitor {
+    fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
+        if field.name() == "message" {
+            self.0 = Some(format!("{:?}", value))
+        }
+    }
 }
 
 struct LogLayer {
@@ -61,6 +71,10 @@ where
             return;
         }
 
+        let mut visitor = LogVisitor(None);
+        event.record(&mut visitor);
+        let message = visitor.0.unwrap_or_default();
+
         static FIXED_OFFSET: chrono::FixedOffset =
             chrono::FixedOffset::east_opt(8 * 3600).expect("创建时区偏移失败");
         let now = chrono::Utc::now().with_timezone(&FIXED_OFFSET);
@@ -81,7 +95,7 @@ where
             Level::ERROR => "💥",
         };
 
-        let msg = format!("{icon} [{year}{month:02}{day:02}][{hour:02}{minute:02}{second:02}][{millis:03}][{micros:03}]\n");
+        let msg = format!("{icon} [{year}{month:02}{day:02}][{hour:02}{minute:02}{second:02}][{millis:03}][{micros:03}] - {message}\n");
 
         for out in self.writers.iter() {
             let mut write = out.clone();
