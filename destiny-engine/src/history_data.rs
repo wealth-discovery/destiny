@@ -317,38 +317,38 @@ impl SyncHistoryMeta {
                 symbol,
                 year,
                 month,
-            } => format!("类型(聚合交易), 交易对({symbol}), 日期({year}-{month:02})"),
+            } => format!("交易对({symbol}), 类型(聚合交易), 日期({year}-{month:02})"),
             SyncHistoryMeta::BookTicker {
                 symbol,
                 year,
                 month,
-            } => format!("类型(盘口), 交易对({symbol}), 日期({year}-{month:02})"),
+            } => format!("交易对({symbol}), 类型(盘口), 日期({year}-{month:02})"),
             SyncHistoryMeta::FundingRate {
                 symbol,
                 year,
                 month,
-            } => format!("类型(资金费率), 交易对({symbol}), 日期({year}-{month:02})"),
+            } => format!("交易对({symbol}), 类型(资金费率), 日期({year}-{month:02})"),
             SyncHistoryMeta::IndexPriceKlines {
                 symbol,
                 interval,
                 year,
                 month,
             } => format!(
-                "类型(指数价格), 交易对({symbol}), 日期({year}-{month:02}), 周期({interval})"
+                "交易对({symbol}), 类型(指数价格), 日期({year}-{month:02}), 周期({interval})"
             ),
             SyncHistoryMeta::Klines {
                 symbol,
                 interval,
                 year,
                 month,
-            } => format!("类型(K线), 交易对({symbol}), 日期({year}-{month:02}), 周期({interval})"),
+            } => format!("交易对({symbol}), 类型(K线), 日期({year}-{month:02}), 周期({interval})"),
             SyncHistoryMeta::MarkPriceKlines {
                 symbol,
                 interval,
                 year,
                 month,
             } => format!(
-                "类型(标记价格), 交易对({symbol}), 日期({year}-{month:02}), 周期({interval})"
+                "交易对({symbol}), 类型(标记价格), 日期({year}-{month:02}), 周期({interval})"
             ),
             SyncHistoryMeta::PremiumIndexKlines {
                 symbol,
@@ -356,13 +356,13 @@ impl SyncHistoryMeta {
                 year,
                 month,
             } => format!(
-                "类型(溢价指数), 交易对({symbol}), 日期({year}-{month:02}), 周期({interval})"
+                "交易对({symbol}), 类型(溢价指数), 日期({year}-{month:02}), 周期({interval})"
             ),
             SyncHistoryMeta::Trades {
                 symbol,
                 year,
                 month,
-            } => format!("类型(交易), 交易对({symbol}), 日期({year}-{month:02})"),
+            } => format!("交易对({symbol}), 类型(交易), 日期({year}-{month:02})"),
         }
     }
 }
