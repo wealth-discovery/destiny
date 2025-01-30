@@ -4,7 +4,7 @@ use chrono::Duration;
 use destiny_helpers::path::cache_dir;
 use destiny_types::enums::KlineInterval;
 use futures::AsyncReadExt;
-use std::{fmt::Display, path::PathBuf};
+use std::path::PathBuf;
 use tokio::{
     fs::{create_dir_all, File},
     io::{AsyncWriteExt, BufReader},
@@ -303,69 +303,6 @@ impl SyncHistoryMeta {
     }
 }
 
-impl Display for SyncHistoryMeta {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SyncHistoryMeta::AggTrades {
-                symbol,
-                year,
-                month,
-            } => write!(f, "交易对({symbol}), 年({year}), 月({month})"),
-            SyncHistoryMeta::BookTicker {
-                symbol,
-                year,
-                month,
-            } => write!(f, "交易对({symbol}), 年({year}), 月({month})"),
-            SyncHistoryMeta::FundingRate {
-                symbol,
-                year,
-                month,
-            } => write!(f, "交易对({symbol}), 年({year}), 月({month})"),
-            SyncHistoryMeta::IndexPriceKlines {
-                symbol,
-                interval,
-                year,
-                month,
-            } => write!(
-                f,
-                "交易对({symbol}), 周期({interval}), 年({year}), 月({month})"
-            ),
-            SyncHistoryMeta::Klines {
-                symbol,
-                interval,
-                year,
-                month,
-            } => write!(
-                f,
-                "交易对({symbol}), 周期({interval}), 年({year}), 月({month})"
-            ),
-            SyncHistoryMeta::MarkPriceKlines {
-                symbol,
-                interval,
-                year,
-                month,
-            } => write!(
-                f,
-                "交易对({symbol}), 周期({interval}), 年({year}), 月({month})"
-            ),
-            SyncHistoryMeta::PremiumIndexKlines {
-                symbol,
-                interval,
-                year,
-                month,
-            } => write!(
-                f,
-                "交易对({symbol}), 周期({interval}), 年({year}), 月({month})"
-            ),
-            SyncHistoryMeta::Trades {
-                symbol,
-                year,
-                month,
-            } => write!(f, "交易对({symbol}), 年({year}), 月({month})"),
-        }
-    }
-}
-
 pub async fn sync(meta: SyncHistoryMeta) {
     while let Err(err) = sync0(&meta).await {
         tracing::error!("{}", err);
@@ -373,7 +310,7 @@ pub async fn sync(meta: SyncHistoryMeta) {
     }
 }
 
-#[instrument(name = "同步历史数据",fields(配置 = format!("{:?}",meta)))]
+#[instrument(name = "同步历史数据")]
 async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
     let save_path = cache_dir()?.join("history_data").join(meta.save_path());
     if !save_path.exists() {
