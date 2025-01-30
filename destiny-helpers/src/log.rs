@@ -17,7 +17,7 @@ pub struct LogConfig {
     /// 是否写入文件
     #[builder(default = true)]
     pub save_file: bool,
-    /// 可显示的包名, 默认显示 [`destiny_`] 开头的包
+    /// 可显示的包名,默认显示[`destiny_`]开头的包
     #[builder(default = vec![])]
     pub targets: Vec<String>,
 }
@@ -126,7 +126,7 @@ where
     }
 }
 
-/// 初始化日志, 将设置全局的日志配置.
+/// 初始化日志,将设置全局的日志配置.
 /// <br> 重复初始化会报错.
 pub async fn init_log(config: LogConfig) -> Result<()> {
     let mut targets =

@@ -304,7 +304,7 @@ impl SyncHistoryMeta {
 
 pub async fn sync(meta: SyncHistoryMeta) {
     while let Err(err) = sync0(&meta).await {
-        tracing::error!("数据同步失败 : {}", err);
+        tracing::error!("同步失败: {}", err);
         sleep(Duration::milliseconds(200).to_std().unwrap()).await;
     }
 }
@@ -316,57 +316,59 @@ impl SyncHistoryMeta {
                 symbol,
                 year,
                 month,
-            } => format!("交易对({symbol}), 类型(聚合交易), 日期({year}-{month:02})"),
+            } => format!("交易对({symbol}),日期({year}-{month:02}),类型(聚合交易)"),
             SyncHistoryMeta::BookTicker {
                 symbol,
                 year,
                 month,
-            } => format!("交易对({symbol}), 类型(盘口), 日期({year}-{month:02})"),
+            } => format!("交易对({symbol}),日期({year}-{month:02}),类型(盘口)"),
             SyncHistoryMeta::FundingRate {
                 symbol,
                 year,
                 month,
-            } => format!("交易对({symbol}), 类型(资金费率), 日期({year}-{month:02})"),
+            } => format!("交易对({symbol}),日期({year}-{month:02}),类型(资金费率)"),
             SyncHistoryMeta::IndexPriceKlines {
                 symbol,
                 interval,
                 year,
                 month,
-            } => format!(
-                "交易对({symbol}), 类型(指数价格), 日期({year}-{month:02}), 周期({interval})"
-            ),
+            } => {
+                format!("交易对({symbol}),日期({year}-{month:02}),类型(指数价格),周期({interval})")
+            }
             SyncHistoryMeta::Klines {
                 symbol,
                 interval,
                 year,
                 month,
-            } => format!("交易对({symbol}), 类型(K线), 日期({year}-{month:02}), 周期({interval})"),
+            } => format!("交易对({symbol}),日期({year}-{month:02}),类型(K线),周期({interval})"),
             SyncHistoryMeta::MarkPriceKlines {
                 symbol,
                 interval,
                 year,
                 month,
-            } => format!(
-                "交易对({symbol}), 类型(标记价格), 日期({year}-{month:02}), 周期({interval})"
-            ),
+            } => {
+                format!("交易对({symbol}),日期({year}-{month:02}),类型(标记价格),周期({interval})")
+            }
             SyncHistoryMeta::PremiumIndexKlines {
                 symbol,
                 interval,
                 year,
                 month,
-            } => format!(
-                "交易对({symbol}), 类型(溢价指数), 日期({year}-{month:02}), 周期({interval})"
-            ),
+            } => {
+                format!("交易对({symbol}),日期({year}-{month:02}),类型(溢价指数),周期({interval})")
+            }
             SyncHistoryMeta::Trades {
                 symbol,
                 year,
                 month,
-            } => format!("交易对({symbol}), 类型(交易), 日期({year}-{month:02})"),
+            } => format!("交易对({symbol}),日期({year}-{month:02}),类型(交易)"),
         }
     }
 }
 
 async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
+    tracing::trace!("同步信息: {}", meta.desc());
+
     let save_path = cache_dir()?.join("history_data").join(meta.save_path());
     if !save_path.exists() {
         create_dir_all(&save_path).await?;
@@ -374,20 +376,20 @@ async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
 
     let save_file_path = save_path.join(meta.save_file_name());
     if save_file_path.exists() {
-        tracing::trace!("本地缓存已存在");
+        tracing::trace!("本地数据已存在");
         return Ok(());
     }
 
-    tracing::trace!("开始下载历史数据...");
+    tracing::trace!("开始下载...");
 
     let request_url = meta.url();
     let response = reqwest::get(request_url).await?;
     if !response.status().is_success() {
         if response.status().as_u16() == 404 {
-            tracing::trace!("历史数据获取状态码 : 404");
+            tracing::trace!("状态码: 404");
             return Ok(());
         }
-        bail!("下载历史数据失败 : {}", response.status());
+        bail!("下载失败: {}", response.status());
     }
 
     let bytes = response.bytes().await?;
@@ -401,7 +403,7 @@ async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
     csv_file.write_all(&csv_data).await?;
     csv_file.shutdown().await?;
 
-    tracing::info!("下载历史数据成功");
+    tracing::info!("下载成功");
 
     Ok(())
 }
