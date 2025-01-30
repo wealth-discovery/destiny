@@ -304,7 +304,7 @@ impl SyncHistoryMeta {
 
 pub async fn sync(meta: SyncHistoryMeta) {
     while let Err(err) = sync0(&meta).await {
-        tracing::error!("{}", err);
+        tracing::error!("数据同步失败 : {}", err);
         sleep(Duration::milliseconds(200).to_std().unwrap()).await;
     }
 }
@@ -374,20 +374,20 @@ async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
 
     let save_file_path = save_path.join(meta.save_file_name());
     if save_file_path.exists() {
-        tracing::info!("历史数据本地已存在");
+        tracing::trace!("本地缓存已存在");
         return Ok(());
     }
 
-    tracing::info!("开始下载历史数据");
+    tracing::trace!("开始下载历史数据...");
 
     let request_url = meta.url();
     let response = reqwest::get(request_url).await?;
     if !response.status().is_success() {
         if response.status().as_u16() == 404 {
-            tracing::warn!("获取的历史数据不存在");
+            tracing::trace!("历史数据获取状态码 : 404");
             return Ok(());
         }
-        bail!("下载历史数据失败: {}", response.status());
+        bail!("下载历史数据失败 : {}", response.status());
     }
 
     let bytes = response.bytes().await?;
@@ -400,6 +400,7 @@ async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
     let mut csv_file = File::create(save_file_path).await?;
     csv_file.write_all(&csv_data).await?;
     csv_file.shutdown().await?;
+
     tracing::info!("下载历史数据成功");
 
     Ok(())
