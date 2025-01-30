@@ -212,6 +212,7 @@ fn new(mut config: BacktestConfig) -> Result<Arc<Backtest>> {
     }))
 }
 
+#[instrument(name = "回测引擎", skip_all)]
 pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<()> {
     let backtest = new(config)?;
 
@@ -237,7 +238,6 @@ pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<
     Ok(())
 }
 
-#[instrument(name = "同步历史数据")]
 async fn sync_history_data(symbols: &[String]) -> Result<()> {
     let mut start = Utc.from_utc_datetime(&NaiveDateTime::new(
         NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),

@@ -310,7 +310,7 @@ pub async fn sync(meta: SyncHistoryMeta) {
     }
 }
 
-#[instrument(name = "同步历史数据")]
+#[instrument(name = "同步历史数据", skip_all)]
 async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
     let save_path = cache_dir()?.join("history_data").join(meta.save_path());
     if !save_path.exists() {
