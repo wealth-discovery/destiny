@@ -10,7 +10,6 @@ use tokio::{
     io::{AsyncWriteExt, BufReader},
     time::sleep,
 };
-use tracing::instrument;
 
 const DOWNLOAD_PREFIX: &str = "https://data.binance.vision/data/futures/um/monthly";
 
@@ -367,7 +366,6 @@ impl SyncHistoryMeta {
     }
 }
 
-#[instrument(name = "同步历史数据", skip_all, fields(参数 = meta.desc()))]
 async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
     let save_path = cache_dir()?.join("history_data").join(meta.save_path());
     if !save_path.exists() {

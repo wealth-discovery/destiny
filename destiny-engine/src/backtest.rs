@@ -11,7 +11,6 @@ use destiny_types::prelude::*;
 use parking_lot::Mutex;
 use std::sync::Arc;
 use strum::IntoEnumIterator;
-use tracing::instrument;
 
 /// 回测配置
 #[derive(Builder)]
@@ -212,7 +211,6 @@ fn new(mut config: BacktestConfig) -> Result<Arc<Backtest>> {
     }))
 }
 
-#[instrument(name = "回测引擎", skip_all)]
 pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<()> {
     let backtest = new(config)?;
 
