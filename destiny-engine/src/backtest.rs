@@ -49,7 +49,7 @@ impl EngineBasic for Backtest {
         self.trade_time.lock().timestamp_millis()
     }
     fn now(&self) -> DateTime<Utc> {
-        self.trade_time.lock().clone()
+        *self.trade_time.lock()
     }
 }
 
@@ -250,7 +250,7 @@ pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<
     strategy.on_init(backtest.clone()).await?;
 
     ensure!(
-        backtest.account.lock().symbols.len() > 0,
+        !backtest.account.lock().symbols.is_empty(),
         "no symbols initialized"
     );
 
@@ -285,28 +285,28 @@ async fn sync_history_data(symbols: &[String]) -> Result<()> {
     while start <= end {
         for symbol in symbols {
             history_data::sync(history_data::SyncHistoryMeta::agg_trades(
-                &symbol,
+                symbol,
                 start.year() as i64,
                 start.month() as i64,
             ))
             .await;
 
             history_data::sync(history_data::SyncHistoryMeta::book_ticker(
-                &symbol,
+                symbol,
                 start.year() as i64,
                 start.month() as i64,
             ))
             .await;
 
             history_data::sync(history_data::SyncHistoryMeta::funding_rate(
-                &symbol,
+                symbol,
                 start.year() as i64,
                 start.month() as i64,
             ))
             .await;
 
             history_data::sync(history_data::SyncHistoryMeta::trades(
-                &symbol,
+                symbol,
                 start.year() as i64,
                 start.month() as i64,
             ))
@@ -314,7 +314,7 @@ async fn sync_history_data(symbols: &[String]) -> Result<()> {
 
             for interval in KlineInterval::iter() {
                 history_data::sync(history_data::SyncHistoryMeta::index_price_klines(
-                    &symbol,
+                    symbol,
                     interval,
                     start.year() as i64,
                     start.month() as i64,
@@ -322,7 +322,7 @@ async fn sync_history_data(symbols: &[String]) -> Result<()> {
                 .await;
 
                 history_data::sync(history_data::SyncHistoryMeta::klines(
-                    &symbol,
+                    symbol,
                     interval,
                     start.year() as i64,
                     start.month() as i64,
@@ -330,7 +330,7 @@ async fn sync_history_data(symbols: &[String]) -> Result<()> {
                 .await;
 
                 history_data::sync(history_data::SyncHistoryMeta::mark_price_klines(
-                    &symbol,
+                    symbol,
                     interval,
                     start.year() as i64,
                     start.month() as i64,
@@ -338,7 +338,7 @@ async fn sync_history_data(symbols: &[String]) -> Result<()> {
                 .await;
 
                 history_data::sync(history_data::SyncHistoryMeta::premium_index_klines(
-                    &symbol,
+                    symbol,
                     interval,
                     start.year() as i64,
                     start.month() as i64,
