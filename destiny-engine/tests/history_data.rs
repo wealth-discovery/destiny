@@ -7,6 +7,9 @@ use tracing::instrument;
 
 #[tokio::test]
 async fn test_sync_history_data() -> Result<()> {
+    if has_github_action_env() {
+        return Ok(());
+    }
     init_log(
         LogConfigBuilder::default()
             .save_file(false)

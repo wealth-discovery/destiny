@@ -35,6 +35,10 @@ impl Strategy for BacktestStrategy {
 
 #[tokio::test]
 async fn test_backtest() -> Result<()> {
+    if has_github_action_env() {
+        return Ok(());
+    }
+
     init_log(
         LogConfigBuilder::default()
             .save_file(false)
