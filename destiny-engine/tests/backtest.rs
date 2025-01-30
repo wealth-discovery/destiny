@@ -12,13 +12,6 @@ impl Strategy for BacktestStrategy {
     async fn on_init(&self, engine: Arc<dyn Engine>) -> Result<()> {
         tracing::info!("on_init: {}", engine.now());
         engine.init_symbol("TRUMPUSDT")?;
-        engine.init_symbol("SOLUSDT")?;
-        engine.init_symbol("XRPUSDT")?;
-        engine.init_symbol("DOGEUSDT")?;
-        engine.init_symbol("WIFUSDT")?;
-        engine.init_symbol("1000PEPEUSDT")?;
-        engine.init_symbol("BTCUSDT")?;
-        engine.init_symbol("ETHUSDT")?;
         Ok(())
     }
 

@@ -16,17 +16,22 @@ impl FormatTime for LocalTimer {
     }
 }
 
+/// 日志配置
 #[derive(Builder)]
 #[builder(setter(into))]
 pub struct LogConfig {
+    /// 是否在控制台输出
     #[builder(default = true)]
     pub show_std: bool,
+    /// 是否写入文件
     #[builder(default = true)]
     pub save_file: bool,
+    /// 可显示的包名, 默认显示`destiny_`开头的包
     #[builder(default = vec![])]
     pub targets: Vec<String>,
 }
 
+/// 初始化日志, 将设置全局的日志配置. 配置不可重复执行
 pub async fn init_log(config: LogConfig) -> Result<()> {
     let dir = cache_dir()?.join("logs");
     create_dir_all(&dir).await?;
