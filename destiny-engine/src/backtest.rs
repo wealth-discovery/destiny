@@ -804,6 +804,18 @@ impl Backtest {
         //     .collect::<Vec<String>>();
 
         strategy.on_start(backtest.clone()).await?;
+
+        let mut begin = backtest.config.begin;
+        let end = backtest.config.end;
+
+        while begin <= end {
+            *backtest.trade_time.lock() = begin;
+
+            strategy.on_tick(backtest.clone()).await?;
+
+            begin += Duration::minutes(1);
+        }
+
         strategy.on_stop(backtest.clone()).await?;
         Ok(())
     }
