@@ -369,7 +369,7 @@ impl SyncHistoryMeta {
     }
 
     async fn sync0(&self) -> Result<()> {
-        tracing::trace!("同步信息: {}", self.desc());
+        tracing::info!("同步信息: {}", self.desc());
 
         let save_path = PathBuf::cache()?
             .join("history_data")
@@ -380,17 +380,23 @@ impl SyncHistoryMeta {
 
         let save_file_path = save_path.join(self.save_file_name());
         if save_file_path.exists() {
-            tracing::trace!("本地数据已存在");
+            tracing::debug!("本地数据已存在");
             return Ok(());
         }
 
-        tracing::trace!("开始下载...");
+        tracing::info!("开始下载...");
 
         let request_url = self.url();
-        let response = reqwest::get(request_url).await?;
+        let response = reqwest::ClientBuilder::default()
+            .connect_timeout(std::time::Duration::from_secs(5))
+            .pool_idle_timeout(std::time::Duration::from_secs(5))
+            .build()?
+            .get(request_url)
+            .send()
+            .await?;
         if !response.status().is_success() {
             if response.status().as_u16() == 404 {
-                tracing::trace!("状态码: 404");
+                tracing::warn!("状态码: 404");
                 return Ok(());
             }
             bail!("下载失败: {}", response.status());
@@ -407,7 +413,7 @@ impl SyncHistoryMeta {
         csv_file.write_all(&csv_data).await?;
         csv_file.shutdown().await?;
 
-        tracing::trace!("下载成功");
+        tracing::info!("下载成功");
 
         Ok(())
     }
