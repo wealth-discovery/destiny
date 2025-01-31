@@ -47,6 +47,6 @@ async fn test_backtest() -> Result<()> {
         .end("20240102".to_date()?)
         .build()?;
 
-    run_backtest(config, Arc::new(BacktestStrategy)).await?;
+    Backtest::run(config, Arc::new(BacktestStrategy)).await?;
     Ok(())
 }

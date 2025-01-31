@@ -191,60 +191,62 @@ impl EngineMarket for Backtest {
     }
 }
 
-fn new(mut config: BacktestConfig) -> Result<Arc<Backtest>> {
-    config.begin = config.begin.duration_trunc(Duration::minutes(1))?;
-    config.end = config.end.duration_trunc(Duration::minutes(1))?;
-    ensure!(config.begin < config.end, "开始时间必须小于结束时间");
+impl Backtest {
+    fn new(mut config: BacktestConfig) -> Result<Arc<Backtest>> {
+        config.begin = config.begin.duration_trunc(Duration::minutes(1))?;
+        config.end = config.end.duration_trunc(Duration::minutes(1))?;
+        ensure!(config.begin < config.end, "开始时间必须小于结束时间");
 
-    config.cash = config.cash.to_safe();
-    ensure!(config.cash >= 0.0, "初始资金必须大于等于0");
+        config.cash = config.cash.to_safe();
+        ensure!(config.cash >= 0.0, "初始资金必须大于等于0");
 
-    config.fee_rate_taker = config.fee_rate_taker.to_safe();
-    config.fee_rate_maker = config.fee_rate_maker.to_safe();
+        config.fee_rate_taker = config.fee_rate_taker.to_safe();
+        config.fee_rate_maker = config.fee_rate_maker.to_safe();
 
-    config.slippage_rate = config.slippage_rate.to_safe();
-    ensure!(config.slippage_rate >= 0.0, "滑点率必须大于等于0");
+        config.slippage_rate = config.slippage_rate.to_safe();
+        ensure!(config.slippage_rate >= 0.0, "滑点率必须大于等于0");
 
-    let config = Arc::new(config);
+        let config = Arc::new(config);
 
-    let account = Arc::new(Mutex::new(Account {
-        cash: Cash {
-            size: config.cash,
-            available: config.cash,
-            frozen: 0.,
-        },
-        symbols: Default::default(),
-        positions: Default::default(),
-        orders: Default::default(),
-    }));
-    let trade_time = Arc::new(Mutex::new(config.begin));
+        let account = Arc::new(Mutex::new(Account {
+            cash: Cash {
+                size: config.cash,
+                available: config.cash,
+                frozen: 0.,
+            },
+            symbols: Default::default(),
+            positions: Default::default(),
+            orders: Default::default(),
+        }));
+        let trade_time = Arc::new(Mutex::new(config.begin));
 
-    Ok(Arc::new(Backtest {
-        config,
-        account,
-        trade_time,
-    }))
-}
+        Ok(Arc::new(Backtest {
+            config,
+            account,
+            trade_time,
+        }))
+    }
 
-pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<()> {
-    let backtest = new(config)?;
+    pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<()> {
+        let backtest = Self::new(config)?;
 
-    strategy.on_init(backtest.clone()).await?;
+        strategy.on_init(backtest.clone()).await?;
 
-    ensure!(
-        !backtest.account.lock().symbols.is_empty(),
-        "未初始化交易对"
-    );
+        ensure!(
+            !backtest.account.lock().symbols.is_empty(),
+            "未初始化交易对"
+        );
 
-    let symbols = backtest
-        .account
-        .lock()
-        .symbols
-        .keys()
-        .cloned()
-        .collect::<Vec<String>>();
+        let symbols = backtest
+            .account
+            .lock()
+            .symbols
+            .keys()
+            .cloned()
+            .collect::<Vec<String>>();
 
-    strategy.on_start(backtest.clone()).await?;
-    strategy.on_stop(backtest.clone()).await?;
-    Ok(())
+        strategy.on_start(backtest.clone()).await?;
+        strategy.on_stop(backtest.clone()).await?;
+        Ok(())
+    }
 }

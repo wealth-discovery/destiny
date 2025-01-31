@@ -360,136 +360,129 @@ impl SyncHistoryMeta {
     }
 }
 
-async fn sync(meta: SyncHistoryMeta) {
-    while let Err(err) = sync0(&meta).await {
-        tracing::error!("同步失败: {}", err);
-        sleep(Duration::milliseconds(200).to_std().unwrap()).await;
-    }
-}
-
-async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
-    tracing::trace!("同步信息: {}", meta.desc());
-
-    let save_path = PathBuf::cache()?
-        .join("history_data")
-        .join(meta.save_path());
-    if !save_path.exists() {
-        create_dir_all(&save_path).await?;
+impl SyncHistoryMeta {
+    async fn sync(&self) {
+        while let Err(err) = self.sync0().await {
+            tracing::error!("同步失败: {}", err);
+            sleep(Duration::milliseconds(200).to_std().unwrap()).await;
+        }
     }
 
-    let save_file_path = save_path.join(meta.save_file_name());
-    if save_file_path.exists() {
-        tracing::trace!("本地数据已存在");
-        return Ok(());
-    }
+    async fn sync0(&self) -> Result<()> {
+        tracing::trace!("同步信息: {}", self.desc());
 
-    tracing::trace!("开始下载...");
+        let save_path = PathBuf::cache()?
+            .join("history_data")
+            .join(self.save_path());
+        if !save_path.exists() {
+            create_dir_all(&save_path).await?;
+        }
 
-    let request_url = meta.url();
-    let response = reqwest::get(request_url).await?;
-    if !response.status().is_success() {
-        if response.status().as_u16() == 404 {
-            tracing::trace!("状态码: 404");
+        let save_file_path = save_path.join(self.save_file_name());
+        if save_file_path.exists() {
+            tracing::trace!("本地数据已存在");
             return Ok(());
         }
-        bail!("下载失败: {}", response.status());
+
+        tracing::trace!("开始下载...");
+
+        let request_url = self.url();
+        let response = reqwest::get(request_url).await?;
+        if !response.status().is_success() {
+            if response.status().as_u16() == 404 {
+                tracing::trace!("状态码: 404");
+                return Ok(());
+            }
+            bail!("下载失败: {}", response.status());
+        }
+
+        let bytes = response.bytes().await?;
+        let reader = BufReader::new(std::io::Cursor::new(bytes));
+        let mut zip = ZipFileReader::with_tokio(reader).await?;
+        let mut csv_reader = zip.reader_with_entry(0).await?;
+        let mut csv_data = Vec::new();
+        csv_reader.read_to_end(&mut csv_data).await?;
+
+        let mut csv_file = File::create(save_file_path).await?;
+        csv_file.write_all(&csv_data).await?;
+        csv_file.shutdown().await?;
+
+        tracing::trace!("下载成功");
+
+        Ok(())
     }
-
-    let bytes = response.bytes().await?;
-    let reader = BufReader::new(std::io::Cursor::new(bytes));
-    let mut zip = ZipFileReader::with_tokio(reader).await?;
-    let mut csv_reader = zip.reader_with_entry(0).await?;
-    let mut csv_data = Vec::new();
-    csv_reader.read_to_end(&mut csv_data).await?;
-
-    let mut csv_file = File::create(save_file_path).await?;
-    csv_file.write_all(&csv_data).await?;
-    csv_file.shutdown().await?;
-
-    tracing::trace!("下载成功");
-
-    Ok(())
 }
 
-pub async fn sync_symbol_history_data(
-    symbol: &str,
-    start: DateTime<Utc>,
-    end: DateTime<Utc>,
-) -> Result<()> {
-    let mut start = start.truncate_month()?;
-    let end = end.truncate_month()?;
+pub struct SyncHistoryData;
+impl SyncHistoryData {
+    pub async fn sync_symbol(symbol: &str, start: DateTime<Utc>, end: DateTime<Utc>) -> Result<()> {
+        let mut start = start.truncate_month()?;
+        let end = end.truncate_month()?;
 
-    while start <= end {
-        // history_data::sync(history_data::SyncHistoryMeta::agg_trades(
-        //     symbol,
-        //     start.year() as i64,
-        //     start.month() as i64,
-        // ))
-        // .await;
+        while start <= end {
+            // SyncHistoryMeta::agg_trades(symbol, start.year() as i64, start.month() as i64)
+            //     .sync()
+            //     .await;
 
-        // history_data::sync(history_data::SyncHistoryMeta::book_ticker(
-        //     symbol,
-        //     start.year() as i64,
-        //     start.month() as i64,
-        // ))
-        // .await;
+            // SyncHistoryMeta::book_ticker(symbol, start.year() as i64, start.month() as i64)
+            //     .sync()
+            //     .await;
 
-        sync(SyncHistoryMeta::funding_rate(
-            symbol,
-            start.year() as i64,
-            start.month() as i64,
-        ))
-        .await;
+            SyncHistoryMeta::funding_rate(symbol, start.year() as i64, start.month() as i64)
+                .sync()
+                .await;
 
-        // history_data::sync(history_data::SyncHistoryMeta::trades(
-        //     symbol,
-        //     start.year() as i64,
-        //     start.month() as i64,
-        // ))
-        // .await;
+            // SyncHistoryMeta::trades(symbol, start.year() as i64, start.month() as i64)
+            //     .sync()
+            //     .await;
 
-        for interval in KlineInterval::iter() {
-            if matches!(
-                interval,
-                KlineInterval::D3 | KlineInterval::W1 | KlineInterval::Mo1
-            ) {
-                continue;
+            for interval in KlineInterval::iter() {
+                if matches!(
+                    interval,
+                    KlineInterval::D3 | KlineInterval::W1 | KlineInterval::Mo1
+                ) {
+                    continue;
+                }
+
+                SyncHistoryMeta::index_price_klines(
+                    symbol,
+                    interval,
+                    start.year() as i64,
+                    start.month() as i64,
+                )
+                .sync()
+                .await;
+
+                SyncHistoryMeta::klines(
+                    symbol,
+                    interval,
+                    start.year() as i64,
+                    start.month() as i64,
+                )
+                .sync()
+                .await;
+
+                SyncHistoryMeta::mark_price_klines(
+                    symbol,
+                    interval,
+                    start.year() as i64,
+                    start.month() as i64,
+                )
+                .sync()
+                .await;
+
+                SyncHistoryMeta::premium_index_klines(
+                    symbol,
+                    interval,
+                    start.year() as i64,
+                    start.month() as i64,
+                )
+                .sync()
+                .await;
             }
-
-            sync(SyncHistoryMeta::index_price_klines(
-                symbol,
-                interval,
-                start.year() as i64,
-                start.month() as i64,
-            ))
-            .await;
-
-            sync(SyncHistoryMeta::klines(
-                symbol,
-                interval,
-                start.year() as i64,
-                start.month() as i64,
-            ))
-            .await;
-
-            sync(SyncHistoryMeta::mark_price_klines(
-                symbol,
-                interval,
-                start.year() as i64,
-                start.month() as i64,
-            ))
-            .await;
-
-            sync(SyncHistoryMeta::premium_index_klines(
-                symbol,
-                interval,
-                start.year() as i64,
-                start.month() as i64,
-            ))
-            .await;
+            start = start + Months::new(1);
         }
-        start = start + Months::new(1);
-    }
 
-    Ok(())
+        Ok(())
+    }
 }
