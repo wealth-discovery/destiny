@@ -1,6 +1,4 @@
-use anyhow::Result;
 use destiny_engine::prelude::*;
-use destiny_helpers::prelude::*;
 
 #[tokio::test]
 async fn test_sync_history_data() -> Result<()> {

@@ -1,8 +1,4 @@
-use anyhow::Result;
-use async_trait::async_trait;
 use destiny_engine::prelude::*;
-use destiny_helpers::prelude::*;
-use std::sync::Arc;
 
 struct BacktestStrategy;
 
