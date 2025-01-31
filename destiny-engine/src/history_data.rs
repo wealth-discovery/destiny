@@ -1,10 +1,11 @@
 use anyhow::{bail, Result};
 use async_zip::base::read::seek::ZipFileReader;
-use chrono::Duration;
-use destiny_helpers::path::cache_dir;
+use chrono::{DateTime, Datelike, Duration, Months, Utc};
+use destiny_helpers::{date::truncate_date_to_month, path::cache_dir};
 use destiny_types::enums::KlineInterval;
 use futures::AsyncReadExt;
 use std::path::PathBuf;
+use strum::IntoEnumIterator;
 use tokio::{
     fs::{create_dir_all, File},
     io::{AsyncWriteExt, BufReader},
@@ -302,13 +303,6 @@ impl SyncHistoryMeta {
     }
 }
 
-pub async fn sync(meta: SyncHistoryMeta) {
-    while let Err(err) = sync0(&meta).await {
-        tracing::error!("同步失败: {}", err);
-        sleep(Duration::milliseconds(200).to_std().unwrap()).await;
-    }
-}
-
 impl SyncHistoryMeta {
     pub fn desc(&self) -> String {
         match self {
@@ -366,6 +360,13 @@ impl SyncHistoryMeta {
     }
 }
 
+async fn sync(meta: SyncHistoryMeta) {
+    while let Err(err) = sync0(&meta).await {
+        tracing::error!("同步失败: {}", err);
+        sleep(Duration::milliseconds(200).to_std().unwrap()).await;
+    }
+}
+
 async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
     tracing::trace!("同步信息: {}", meta.desc());
 
@@ -403,7 +404,90 @@ async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
     csv_file.write_all(&csv_data).await?;
     csv_file.shutdown().await?;
 
-    tracing::info!("下载成功");
+    tracing::trace!("下载成功");
+
+    Ok(())
+}
+
+pub async fn sync_symbol_history_data(
+    symbol: &str,
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
+) -> Result<()> {
+    let mut start = truncate_date_to_month(start)?;
+    let end = truncate_date_to_month(end)?;
+
+    while start <= end {
+        // history_data::sync(history_data::SyncHistoryMeta::agg_trades(
+        //     symbol,
+        //     start.year() as i64,
+        //     start.month() as i64,
+        // ))
+        // .await;
+
+        // history_data::sync(history_data::SyncHistoryMeta::book_ticker(
+        //     symbol,
+        //     start.year() as i64,
+        //     start.month() as i64,
+        // ))
+        // .await;
+
+        sync(SyncHistoryMeta::funding_rate(
+            symbol,
+            start.year() as i64,
+            start.month() as i64,
+        ))
+        .await;
+
+        // history_data::sync(history_data::SyncHistoryMeta::trades(
+        //     symbol,
+        //     start.year() as i64,
+        //     start.month() as i64,
+        // ))
+        // .await;
+
+        for interval in KlineInterval::iter() {
+            if matches!(
+                interval,
+                KlineInterval::D3 | KlineInterval::W1 | KlineInterval::Mo1
+            ) {
+                continue;
+            }
+
+            sync(SyncHistoryMeta::index_price_klines(
+                symbol,
+                interval,
+                start.year() as i64,
+                start.month() as i64,
+            ))
+            .await;
+
+            sync(SyncHistoryMeta::klines(
+                symbol,
+                interval,
+                start.year() as i64,
+                start.month() as i64,
+            ))
+            .await;
+
+            sync(SyncHistoryMeta::mark_price_klines(
+                symbol,
+                interval,
+                start.year() as i64,
+                start.month() as i64,
+            ))
+            .await;
+
+            sync(SyncHistoryMeta::premium_index_klines(
+                symbol,
+                interval,
+                start.year() as i64,
+                start.month() as i64,
+            ))
+            .await;
+        }
+        start = start + Months::new(1);
+    }
 
     Ok(())
 }

@@ -1,16 +1,12 @@
-use crate::{history_data, traits::*};
+use crate::traits::*;
 use anyhow::{ensure, Result};
 use async_trait::async_trait;
-use chrono::{
-    DateTime, Datelike, Duration, DurationRound, Months, NaiveDate, NaiveDateTime, NaiveTime,
-    TimeZone, Utc,
-};
+use chrono::{DateTime, Duration, DurationRound, Utc};
 use derive_builder::Builder;
 use destiny_helpers::prelude::*;
 use destiny_types::prelude::*;
 use parking_lot::Mutex;
 use std::sync::Arc;
-use strum::IntoEnumIterator;
 
 /// 回测配置
 #[derive(Builder)]
@@ -221,99 +217,15 @@ pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<
         "未初始化交易对"
     );
 
-    let symbols = backtest
-        .account
-        .lock()
-        .symbols
-        .keys()
-        .cloned()
-        .collect::<Vec<String>>();
-
-    sync_history_data(&symbols).await?;
+    // let symbols = backtest
+    //     .account
+    //     .lock()
+    //     .symbols
+    //     .keys()
+    //     .cloned()
+    //     .collect::<Vec<String>>();
 
     strategy.on_start(backtest.clone()).await?;
     strategy.on_stop(backtest.clone()).await?;
-    Ok(())
-}
-
-async fn sync_history_data(symbols: &[String]) -> Result<()> {
-    let mut start = Utc.from_utc_datetime(&NaiveDateTime::new(
-        NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
-        NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
-    ));
-    let end = now()
-        .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
-        .unwrap()
-        .with_day(1)
-        .unwrap()
-        - Duration::days(1);
-
-    while start <= end {
-        for symbol in symbols {
-            // history_data::sync(history_data::SyncHistoryMeta::agg_trades(
-            //     symbol,
-            //     start.year() as i64,
-            //     start.month() as i64,
-            // ))
-            // .await;
-
-            // history_data::sync(history_data::SyncHistoryMeta::book_ticker(
-            //     symbol,
-            //     start.year() as i64,
-            //     start.month() as i64,
-            // ))
-            // .await;
-
-            history_data::sync(history_data::SyncHistoryMeta::funding_rate(
-                symbol,
-                start.year() as i64,
-                start.month() as i64,
-            ))
-            .await;
-
-            // history_data::sync(history_data::SyncHistoryMeta::trades(
-            //     symbol,
-            //     start.year() as i64,
-            //     start.month() as i64,
-            // ))
-            // .await;
-
-            for interval in KlineInterval::iter() {
-                history_data::sync(history_data::SyncHistoryMeta::index_price_klines(
-                    symbol,
-                    interval,
-                    start.year() as i64,
-                    start.month() as i64,
-                ))
-                .await;
-
-                history_data::sync(history_data::SyncHistoryMeta::klines(
-                    symbol,
-                    interval,
-                    start.year() as i64,
-                    start.month() as i64,
-                ))
-                .await;
-
-                history_data::sync(history_data::SyncHistoryMeta::mark_price_klines(
-                    symbol,
-                    interval,
-                    start.year() as i64,
-                    start.month() as i64,
-                ))
-                .await;
-
-                history_data::sync(history_data::SyncHistoryMeta::premium_index_klines(
-                    symbol,
-                    interval,
-                    start.year() as i64,
-                    start.month() as i64,
-                ))
-                .await;
-            }
-        }
-        start = start + Months::new(1);
-    }
-
     Ok(())
 }
