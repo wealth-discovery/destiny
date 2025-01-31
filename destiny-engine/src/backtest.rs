@@ -297,6 +297,13 @@ impl EngineTrade for Backtest {
             symbol_rule.price_max
         );
 
+        ensure!(
+            position.long.size >= size,
+            "持仓数量不足: 数量({}),限制({})",
+            position.long.size,
+            size
+        );
+
         self.account
             .lock()
             .positions
@@ -546,6 +553,13 @@ impl EngineTrade for Backtest {
             "最高价格限制: 价格({}),限制({})",
             price,
             symbol_rule.price_max
+        );
+
+        ensure!(
+            position.short.size >= size,
+            "持仓数量不足: 数量({}),限制({})",
+            position.short.size,
+            size
         );
 
         self.account
