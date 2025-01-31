@@ -81,7 +81,7 @@ impl EngineTrade for Backtest {
     fn now(&self) -> DateTime<Utc> {
         *self.trade_time.lock()
     }
-    async fn open_long_market(&self, symbol: &str, size: f64) -> Result<String> {
+    async fn open_market_long(&self, symbol: &str, size: f64) -> Result<String> {
         let symbol_index = self.symbol_index(symbol)?;
         let symbol_rule = self.symbol_rule(symbol)?;
         let cash = self.cash();
@@ -140,7 +140,7 @@ impl EngineTrade for Backtest {
         );
         Ok(order_id)
     }
-    async fn open_long_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
+    async fn open_limit_long(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
         let symbol_index = self.symbol_index(symbol)?;
         let symbol_rule = self.symbol_rule(symbol)?;
         let cash = self.cash();
@@ -213,7 +213,7 @@ impl EngineTrade for Backtest {
         );
         Ok(order_id)
     }
-    async fn close_long_market(&self, symbol: &str, size: f64) -> Result<String> {
+    async fn close_market_long(&self, symbol: &str, size: f64) -> Result<String> {
         let symbol_index = self.symbol_index(symbol)?;
         let symbol_rule = self.symbol_rule(symbol)?;
         let cash = self.cash();
@@ -269,7 +269,7 @@ impl EngineTrade for Backtest {
         );
         Ok(order_id)
     }
-    async fn close_long_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
+    async fn close_limit_long(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
         let symbol_index = self.symbol_index(symbol)?;
         let symbol_rule = self.symbol_rule(symbol)?;
         let cash = self.cash();
@@ -332,7 +332,7 @@ impl EngineTrade for Backtest {
         );
         Ok(order_id)
     }
-    async fn open_short_market(&self, symbol: &str, size: f64) -> Result<String> {
+    async fn open_market_short(&self, symbol: &str, size: f64) -> Result<String> {
         let symbol_index = self.symbol_index(symbol)?;
         let symbol_rule = self.symbol_rule(symbol)?;
         let cash = self.cash();
@@ -391,7 +391,7 @@ impl EngineTrade for Backtest {
         );
         Ok(order_id)
     }
-    async fn open_short_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
+    async fn open_limit_short(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
         let symbol_index = self.symbol_index(symbol)?;
         let symbol_rule = self.symbol_rule(symbol)?;
         let cash = self.cash();
@@ -464,7 +464,7 @@ impl EngineTrade for Backtest {
         );
         Ok(order_id)
     }
-    async fn close_short_market(&self, symbol: &str, size: f64) -> Result<String> {
+    async fn close_market_short(&self, symbol: &str, size: f64) -> Result<String> {
         let symbol_index = self.symbol_index(symbol)?;
         let symbol_rule = self.symbol_rule(symbol)?;
         let cash = self.cash();
@@ -520,7 +520,7 @@ impl EngineTrade for Backtest {
         );
         Ok(order_id)
     }
-    async fn close_short_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
+    async fn close_limit_short(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
         let symbol_index = self.symbol_index(symbol)?;
         let symbol_rule = self.symbol_rule(symbol)?;
         let cash = self.cash();
@@ -583,13 +583,13 @@ impl EngineTrade for Backtest {
         );
         Ok(order_id)
     }
-    async fn cancel_order(&self, symbol: &str, order_id: &str) -> Result<()> {
+    async fn order_candle(&self, symbol: &str, order_id: &str) -> Result<()> {
         todo!()
     }
-    async fn cancel_orders(&self, symbol: &str, order_ids: &[&str]) -> Result<()> {
+    async fn orders_cancel(&self, symbol: &str, order_ids: &[&str]) -> Result<()> {
         todo!()
     }
-    async fn set_leverage(&self, symbol: &str, leverage: u32) -> Result<()> {
+    async fn leverage_set(&self, symbol: &str, leverage: u32) -> Result<()> {
         todo!()
     }
     fn leverage(&self, symbol: &str) -> Result<u32> {

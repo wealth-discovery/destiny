@@ -22,58 +22,58 @@ pub trait EngineTrade: Send + Sync {
     /// <br> [`symbol`]: 交易对
     /// <br> [`size`]: 数量
     /// <br> 返回订单ID
-    async fn open_long_market(&self, symbol: &str, size: f64) -> Result<String>;
+    async fn open_market_long(&self, symbol: &str, size: f64) -> Result<String>;
     /// 限价开多
     /// <br> [`symbol`]: 交易对
     /// <br> [`size`]: 数量
     /// <br> [`price`]: 开仓价格
     /// <br> 返回订单ID
-    async fn open_long_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
+    async fn open_limit_long(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
     /// 市价平多
     /// <br> [`symbol`]: 交易对
     /// <br> [`size`]: 数量
     /// <br> 返回订单ID
-    async fn close_long_market(&self, symbol: &str, size: f64) -> Result<String>;
+    async fn close_market_long(&self, symbol: &str, size: f64) -> Result<String>;
     /// 限价平多
     /// <br> [`symbol`]: 交易对
     /// <br> [`size`]: 数量
     /// <br> [`price`]: 平仓价格
     /// <br> 返回订单ID
-    async fn close_long_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
+    async fn close_limit_long(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
     /// 市价开空
     /// <br> [`symbol`]: 交易对
     /// <br> [`size`]: 数量
     /// <br> 返回订单ID
-    async fn open_short_market(&self, symbol: &str, size: f64) -> Result<String>;
+    async fn open_market_short(&self, symbol: &str, size: f64) -> Result<String>;
     /// 限价开空
     /// <br> [`symbol`]: 交易对
     /// <br> [`size`]: 数量
     /// <br> [`price`]: 开仓价格
     /// <br> 返回订单ID
-    async fn open_short_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
+    async fn open_limit_short(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
     /// 市价平空
     /// <br> [`symbol`]: 交易对
     /// <br> [`size`]: 数量
     /// <br> 返回订单ID
-    async fn close_short_market(&self, symbol: &str, size: f64) -> Result<String>;
+    async fn close_market_short(&self, symbol: &str, size: f64) -> Result<String>;
     /// 限价平空
     /// <br> [`symbol`]: 交易对
     /// <br> [`size`]: 数量
     /// <br> [`price`]: 平仓价格
     /// <br> 返回订单ID
-    async fn close_short_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
+    async fn close_limit_short(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
     /// 撤单
     /// <br> [`symbol`]: 交易对
     /// <br> [`order_id`]: 订单ID
-    async fn cancel_order(&self, symbol: &str, order_id: &str) -> Result<()>;
+    async fn order_candle(&self, symbol: &str, order_id: &str) -> Result<()>;
     /// 批量撤单
     /// <br> [`symbol`]: 交易对
     /// <br> [`order_ids`]: 订单ID列表
-    async fn cancel_orders(&self, symbol: &str, order_ids: &[&str]) -> Result<()>;
+    async fn orders_cancel(&self, symbol: &str, order_ids: &[&str]) -> Result<()>;
     /// 设置杠杆倍率
     /// <br> [`symbol`]: 交易对
     /// <br> [`leverage`]: 杠杆倍率
-    async fn set_leverage(&self, symbol: &str, leverage: u32) -> Result<()>;
+    async fn leverage_set(&self, symbol: &str, leverage: u32) -> Result<()>;
     /// 获取杠杆倍率
     /// <br> [`symbol`]: 交易对
     fn leverage(&self, symbol: &str) -> Result<u32>;
