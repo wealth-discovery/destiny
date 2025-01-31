@@ -795,13 +795,13 @@ impl Backtest {
             "未初始化交易对"
         );
 
-        let symbols = backtest
-            .account
-            .lock()
-            .symbols
-            .keys()
-            .cloned()
-            .collect::<Vec<String>>();
+        // let symbols = backtest
+        //     .account
+        //     .lock()
+        //     .symbols
+        //     .keys()
+        //     .cloned()
+        //     .collect::<Vec<String>>();
 
         strategy.on_start(backtest.clone()).await?;
         strategy.on_stop(backtest.clone()).await?;

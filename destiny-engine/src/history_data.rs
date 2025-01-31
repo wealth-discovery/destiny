@@ -414,6 +414,7 @@ impl SyncHistoryMeta {
 }
 
 pub struct SyncHistoryData;
+
 impl SyncHistoryData {
     pub async fn sync_symbol(symbol: &str, start: DateTime<Utc>, end: DateTime<Utc>) -> Result<()> {
         let mut start = start.truncate_month()?;
@@ -486,3 +487,5 @@ impl SyncHistoryData {
         Ok(())
     }
 }
+
+impl SyncHistoryData {}
