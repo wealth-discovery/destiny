@@ -1,5 +1,5 @@
 use crate::traits::*;
-use anyhow::{ensure, Result};
+use anyhow::{anyhow, ensure, Result};
 use async_trait::async_trait;
 use chrono::{DateTime, Duration, DurationRound, Utc};
 use derive_builder::Builder;
@@ -149,26 +149,34 @@ impl EngineTrade for Backtest {
     }
 }
 
-#[allow(unused_variables)]
 impl EngineAccount for Backtest {
     fn cash(&self) -> Cash {
-        todo!()
+        self.account.lock().cash.clone()
     }
     fn position(&self, symbol: &str) -> Result<SymbolPosition> {
-        todo!()
+        self.account
+            .lock()
+            .positions
+            .get(symbol)
+            .cloned()
+            .ok_or(anyhow!("仓位不存在: {}", symbol))
     }
 }
 
-#[allow(unused_variables)]
 impl EngineMarket for Backtest {
     fn symbol(&self, symbol: &str) -> Result<Symbol> {
-        todo!()
+        self.account
+            .lock()
+            .symbols
+            .get(symbol)
+            .cloned()
+            .ok_or(anyhow!("交易对不存在: {}", symbol))
     }
     fn symbol_rule(&self, symbol: &str) -> Result<SymbolRule> {
-        todo!()
+        Ok(self.symbol(symbol)?.rule)
     }
     fn symbol_index(&self, symbol: &str) -> Result<SymbolIndex> {
-        todo!()
+        Ok(self.symbol(symbol)?.index)
     }
 }
 
