@@ -85,7 +85,7 @@ where
             chrono::FixedOffset::east_opt(8 * 3600).expect("创建时区偏移失败");
         let now = chrono::Utc::now()
             .with_timezone(&FIXED_OFFSET)
-            .format("%Y-%m-%d %H:%M:%S.%6f")
+            .format("%Y%m%d_%H%M%S_%6f")
             .to_string();
 
         let level = *event.metadata().level();
@@ -98,10 +98,17 @@ where
             Level::ERROR => "错误",
         };
 
-        let target = event.metadata().target().replace("::", ":");
+        let target = event
+            .metadata()
+            .target()
+            .split("::")
+            .last()
+            .unwrap_or_default();
         let line = event.metadata().line().unwrap_or(0);
 
-        let msg = format!("[{topic}][{now}][{target}:{line}]> {message}\n");
+        let thread_id = std::thread::current().id().as_u64();
+
+        let msg = format!("[{topic}][{now}][{thread_id:02}][{target}:{line:04}]> {message}\n");
 
         if let Some(writer) = &self.std_writer {
             let mut write = writer.clone();

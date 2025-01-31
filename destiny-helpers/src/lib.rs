@@ -1,3 +1,5 @@
+#![feature(thread_id_value)]
+
 pub mod date;
 pub mod db;
 pub mod env;
