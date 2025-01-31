@@ -59,21 +59,21 @@ pub struct SymbolPosition {
     pub short: Position,
 }
 
-/// 保证金
+/// 资金
 #[derive(Debug, Clone)]
 pub struct Cash {
-    /// 保证金
+    /// 资金
     pub size: f64,
-    /// 可用保证金
+    /// 可用资金
     pub available: f64,
-    /// 冻结保证金
+    /// 冻结资金
     pub frozen: f64,
 }
 
 /// 账户
 #[derive(Debug, Clone)]
 pub struct Account {
-    /// 保证金
+    /// 资金
     pub cash: Cash,
     /// 交易对
     pub symbols: HashMap<String, Symbol>,

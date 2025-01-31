@@ -88,6 +88,23 @@ impl EngineInit for Backtest {
 #[allow(unused_variables)]
 impl EngineTrade for Backtest {
     async fn open_long_market(&self, symbol: &str, size: f64) -> Result<String> {
+        let symbol_index = self.symbol_index(symbol)?;
+        let symbol_rule = self.symbol_rule(symbol)?;
+        let position = self.position(symbol)?;
+        let size = self.truncate_float(symbol_rule.size_tick % size, 8, false);
+        ensure!(
+            size >= symbol_rule.size_min,
+            "数量小于: {}",
+            symbol_rule.size_min
+        );
+        let cash = self.truncate_float(size * symbol_index.last_price, 8, false);
+        ensure!(
+            cash >= symbol_rule.cash_min,
+            "金额小于: {}",
+            symbol_rule.cash_min
+        );
+        let margin = cash / position.leverage as f64;
+
         todo!()
     }
     async fn open_long_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String> {

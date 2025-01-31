@@ -1,11 +1,12 @@
-use crate::path::cache_dir;
 use anyhow::Result;
 use derive_builder::Builder;
 use nu_ansi_term::Color;
-use std::io::Write;
+use std::{io::Write, path::PathBuf};
 use tokio::fs::create_dir_all;
 use tracing::{field::Visit, level_filters::LevelFilter, Level};
 use tracing_subscriber::{layer::SubscriberExt, Layer};
+
+use crate::path::PathBufSupport;
 
 /// 日志配置
 #[derive(Builder)]
@@ -48,7 +49,7 @@ impl LogLayer {
 
         let mut file_writer = None;
         if save_file {
-            let dir = cache_dir()?.join("logs");
+            let dir = PathBuf::cache()?.join("logs");
             create_dir_all(&dir).await?;
             let appender = tracing_appender::rolling::daily(dir, "log");
             let (writer, guard) = tracing_appender::non_blocking(appender);
@@ -126,20 +127,22 @@ where
     }
 }
 
-/// 初始化日志,将设置全局的日志配置.
-/// <br> 重复初始化会报错.
-pub async fn init_log(config: LogConfig) -> Result<()> {
-    let mut targets =
-        tracing_subscriber::filter::Targets::new().with_target("destiny_", LevelFilter::TRACE);
-    for target in config.targets {
-        targets = targets.with_target(target, LevelFilter::TRACE);
+impl LogConfig {
+    /// 初始化日志,将设置全局的日志配置.
+    /// <br> 重复初始化会报错.
+    pub async fn init_log(self) -> Result<()> {
+        let mut targets =
+            tracing_subscriber::filter::Targets::new().with_target("destiny_", LevelFilter::TRACE);
+        for target in self.targets {
+            targets = targets.with_target(target, LevelFilter::TRACE);
+        }
+
+        let layer = LogLayer::new(self.show_std, self.save_file).await?;
+
+        let collector = tracing_subscriber::registry().with(targets).with(layer);
+
+        tracing::subscriber::set_global_default(collector)?;
+
+        Ok(())
     }
-
-    let layer = LogLayer::new(config.show_std, config.save_file).await?;
-
-    let collector = tracing_subscriber::registry().with(targets).with(layer);
-
-    tracing::subscriber::set_global_default(collector)?;
-
-    Ok(())
 }
