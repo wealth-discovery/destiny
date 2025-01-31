@@ -23,6 +23,11 @@ impl Strategy for BacktestStrategy {
         tracing::info!("on_stop: {}", engine.now());
         Ok(())
     }
+
+    async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
+        tracing::info!("on_tick: {}", engine.now());
+        Ok(())
+    }
 }
 
 #[tokio::test]
@@ -39,8 +44,8 @@ async fn test_backtest() -> Result<()> {
         .await?;
 
     let config = BacktestConfigBuilder::default()
-        .begin("20240101".to_date()?)
-        .end("20240102".to_date()?)
+        .begin("2023".to_date()?)
+        .end("2024".to_date()?)
         .build()?;
 
     Backtest::run(config, Arc::new(BacktestStrategy)).await?;

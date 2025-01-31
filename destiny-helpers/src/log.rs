@@ -1,3 +1,4 @@
+use crate::path::PathBufSupport;
 use anyhow::Result;
 use derive_builder::Builder;
 use nu_ansi_term::Color;
@@ -5,8 +6,6 @@ use std::{io::Write, path::PathBuf};
 use tokio::fs::create_dir_all;
 use tracing::{field::Visit, level_filters::LevelFilter, Level};
 use tracing_subscriber::{layer::SubscriberExt, Layer};
-
-use crate::path::PathBufSupport;
 
 /// 日志配置
 #[derive(Builder)]
@@ -34,19 +33,12 @@ impl Visit for LogVisitor {
 }
 
 struct LogLayer {
-    std_writer: Option<tracing_appender::non_blocking::NonBlocking>,
+    show_std: bool,
     file_writer: Option<tracing_appender::non_blocking::NonBlocking>,
 }
 
 impl LogLayer {
     pub async fn new(show_std: bool, save_file: bool) -> Result<Self> {
-        let mut std_writer = None;
-        if show_std {
-            let (writer, guard) = tracing_appender::non_blocking(std::io::stdout());
-            std_writer = Some(writer);
-            std::mem::forget(guard);
-        }
-
         let mut file_writer = None;
         if save_file {
             let dir = PathBuf::cache()?.join("logs");
@@ -58,7 +50,7 @@ impl LogLayer {
         }
 
         Ok(Self {
-            std_writer,
+            show_std,
             file_writer,
         })
     }
@@ -73,7 +65,7 @@ where
         event: &tracing::Event<'_>,
         _ctx: tracing_subscriber::layer::Context<'_, S>,
     ) {
-        if self.std_writer.is_none() && self.file_writer.is_none() {
+        if !self.show_std && self.file_writer.is_none() {
             return;
         }
 
@@ -110,9 +102,8 @@ where
 
         let msg = format!("[{topic}][{now}][{thread_id:02}][{target}:{line:04}]> {message}\n");
 
-        if let Some(writer) = &self.std_writer {
-            let mut write = writer.clone();
-            write
+        if self.show_std {
+            std::io::stdout()
                 .write_all(
                     match level {
                         Level::TRACE => Color::DarkGray.paint(&msg),
@@ -128,8 +119,8 @@ where
         }
 
         if let Some(writer) = &self.file_writer {
-            let mut write = writer.clone();
-            write.write_all(msg.as_bytes()).ok();
+            let mut writer = writer.clone();
+            writer.write_all(msg.as_bytes()).ok();
         }
     }
 }
