@@ -77,25 +77,25 @@ pub trait StrDateSupport {
     /// <br> [`2025010203`]
     /// <br> [`202501020304`]
     /// <br> [`20250102030405`]
-    fn to_date(&self, s: &str) -> Result<DateTime<Utc>>;
+    fn to_date(&self) -> Result<DateTime<Utc>>;
 }
 
-impl StrDateSupport for DateTime<Utc> {
-    fn to_date(&self, s: &str) -> Result<DateTime<Utc>> {
-        let t = if s.len() == 4 {
-            DateTime::parse_from_str(&format!("{s}0101000000+00:00"), "%Y%m%d%H%M%S%z")?.to_utc()
-        } else if s.len() == 6 {
-            DateTime::parse_from_str(&format!("{s}01000000+00:00"), "%Y%m%d%H%M%S%z")?.to_utc()
-        } else if s.len() == 8 {
-            DateTime::parse_from_str(&format!("{s}000000+00:00"), "%Y%m%d%H%M%S%z")?.to_utc()
-        } else if s.len() == 10 {
-            DateTime::parse_from_str(&format!("{s}0000+00:00"), "%Y%m%d%H%M%S%z")?.to_utc()
-        } else if s.len() == 12 {
-            DateTime::parse_from_str(&format!("{s}00+00:00"), "%Y%m%d%H%M%S%z")?.to_utc()
-        } else if s.len() == 14 {
-            DateTime::parse_from_str(&format!("{s}+00:00"), "%Y%m%d%H%M%S%z")?.to_utc()
+impl StrDateSupport for &str {
+    fn to_date(&self) -> Result<DateTime<Utc>> {
+        let t = if self.len() == 4 {
+            DateTime::parse_from_str(&format!("{self}0101000000+00:00"), "%Y%m%d%H%M%S%z")?.to_utc()
+        } else if self.len() == 6 {
+            DateTime::parse_from_str(&format!("{self}01000000+00:00"), "%Y%m%d%H%M%S%z")?.to_utc()
+        } else if self.len() == 8 {
+            DateTime::parse_from_str(&format!("{self}000000+00:00"), "%Y%m%d%H%M%S%z")?.to_utc()
+        } else if self.len() == 10 {
+            DateTime::parse_from_str(&format!("{self}0000+00:00"), "%Y%m%d%H%M%S%z")?.to_utc()
+        } else if self.len() == 12 {
+            DateTime::parse_from_str(&format!("{self}00+00:00"), "%Y%m%d%H%M%S%z")?.to_utc()
+        } else if self.len() == 14 {
+            DateTime::parse_from_str(&format!("{self}+00:00"), "%Y%m%d%H%M%S%z")?.to_utc()
         } else {
-            return Err(anyhow!("日期转换失败: {}", s));
+            return Err(anyhow!("日期转换失败: {}", self));
         };
         Ok(t)
     }

@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use async_zip::base::read::seek::ZipFileReader;
 use chrono::{DateTime, Datelike, Duration, Months, Utc};
-use destiny_helpers::{date::truncate_date_to_month, path::cache_dir};
+use destiny_helpers::prelude::*;
 use destiny_types::enums::KlineInterval;
 use futures::AsyncReadExt;
 use std::path::PathBuf;
@@ -370,7 +370,9 @@ async fn sync(meta: SyncHistoryMeta) {
 async fn sync0(meta: &SyncHistoryMeta) -> Result<()> {
     tracing::trace!("同步信息: {}", meta.desc());
 
-    let save_path = cache_dir()?.join("history_data").join(meta.save_path());
+    let save_path = PathBuf::cache()?
+        .join("history_data")
+        .join(meta.save_path());
     if !save_path.exists() {
         create_dir_all(&save_path).await?;
     }
@@ -414,8 +416,8 @@ pub async fn sync_symbol_history_data(
     start: DateTime<Utc>,
     end: DateTime<Utc>,
 ) -> Result<()> {
-    let mut start = truncate_date_to_month(start)?;
-    let end = truncate_date_to_month(end)?;
+    let mut start = start.truncate_month()?;
+    let end = end.truncate_month()?;
 
     while start <= end {
         // history_data::sync(history_data::SyncHistoryMeta::agg_trades(

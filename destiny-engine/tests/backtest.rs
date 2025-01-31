@@ -31,21 +31,20 @@ impl Strategy for BacktestStrategy {
 
 #[tokio::test]
 async fn test_backtest() -> Result<()> {
-    if has_github_action_env() {
+    if bool::has_github_action() {
         return Ok(());
     }
 
-    init_log(
-        LogConfigBuilder::default()
-            .save_file(false)
-            .targets(vec!["backtest".to_string()])
-            .build()?,
-    )
-    .await?;
+    LogConfigBuilder::default()
+        .save_file(false)
+        .targets(vec!["backtest".to_string()])
+        .build()?
+        .init_log()
+        .await?;
 
     let config = BacktestConfigBuilder::default()
-        .begin(str_to_date("20240101")?)
-        .end(str_to_date("20240102")?)
+        .begin("20240101".to_date()?)
+        .end("20240102".to_date()?)
         .build()?;
 
     run_backtest(config, Arc::new(BacktestStrategy)).await?;

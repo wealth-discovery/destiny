@@ -39,15 +39,6 @@ pub struct Backtest {
 
 impl Engine for Backtest {}
 
-impl EngineBasic for Backtest {
-    fn now_ms(&self) -> i64 {
-        self.trade_time.lock().timestamp_millis()
-    }
-    fn now(&self) -> DateTime<Utc> {
-        *self.trade_time.lock()
-    }
-}
-
 impl EngineInit for Backtest {
     fn init_symbol(&self, symbol: &str) -> Result<()> {
         ensure!(
@@ -87,23 +78,26 @@ impl EngineInit for Backtest {
 #[async_trait]
 #[allow(unused_variables)]
 impl EngineTrade for Backtest {
+    fn now(&self) -> DateTime<Utc> {
+        *self.trade_time.lock()
+    }
     async fn open_long_market(&self, symbol: &str, size: f64) -> Result<String> {
         let symbol_index = self.symbol_index(symbol)?;
         let symbol_rule = self.symbol_rule(symbol)?;
         let position = self.position(symbol)?;
-        let size = self.truncate_float(symbol_rule.size_tick % size, 8, false);
+        let size = (symbol_rule.size_tick % size).to_safe();
         ensure!(
             size >= symbol_rule.size_min,
             "数量小于: {}",
             symbol_rule.size_min
         );
-        let cash = self.truncate_float(size * symbol_index.last_price, 8, false);
+        let cash = (size * symbol_index.last_price).to_safe();
         ensure!(
             cash >= symbol_rule.cash_min,
             "金额小于: {}",
             symbol_rule.cash_min
         );
-        let margin = cash / position.leverage as f64;
+        let margin = (cash / position.leverage as f64).to_safe();
 
         todo!()
     }
@@ -202,13 +196,13 @@ fn new(mut config: BacktestConfig) -> Result<Arc<Backtest>> {
     config.end = config.end.duration_trunc(Duration::minutes(1))?;
     ensure!(config.begin < config.end, "开始时间必须小于结束时间");
 
-    config.cash = truncate_float(config.cash, 8, false);
+    config.cash = config.cash.to_safe();
     ensure!(config.cash >= 0.0, "初始资金必须大于等于0");
 
-    config.fee_rate_taker = truncate_float(config.fee_rate_taker, 8, false);
-    config.fee_rate_maker = truncate_float(config.fee_rate_maker, 8, false);
+    config.fee_rate_taker = config.fee_rate_taker.to_safe();
+    config.fee_rate_maker = config.fee_rate_maker.to_safe();
 
-    config.slippage_rate = truncate_float(config.slippage_rate, 8, false);
+    config.slippage_rate = config.slippage_rate.to_safe();
     ensure!(config.slippage_rate >= 0.0, "滑点率必须大于等于0");
 
     let config = Arc::new(config);

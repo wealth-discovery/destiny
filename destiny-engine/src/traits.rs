@@ -1,50 +1,10 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use destiny_helpers::prelude::*;
 use destiny_types::prelude::*;
 use std::sync::Arc;
 
-pub trait Engine:
-    EngineBasic + EngineInit + EngineTrade + EngineAccount + EngineMarket + Send + Sync
-{
-}
-
-/// 引擎基础功能
-pub trait EngineBasic: Send + Sync {
-    /// 将毫秒转换为日期
-    fn ms_to_date(&self, ms: i64) -> Result<DateTime<Utc>> {
-        ms_to_date(ms)
-    }
-
-    /// 获取当前时间戳
-    fn now_ms(&self) -> i64 {
-        now_ms()
-    }
-
-    /// 获取当前日期
-    fn now(&self) -> DateTime<Utc> {
-        now()
-    }
-
-    /// 生成一个32位的小写UUID(V4版本)
-    fn gen_id(&self) -> String {
-        gen_id()
-    }
-
-    /// 截断数值
-    /// <br> [`decimals`]: 表示小数点后保留的位数.
-    /// <br> [`round_up`]: 表示是否四舍五入.
-    fn truncate_float(&self, val: f64, decimals: u32, round_up: bool) -> f64 {
-        truncate_float(val, decimals, round_up)
-    }
-
-    /// 判断是否为0
-    /// <br> 如果[`val`]的绝对值小于[`1e-8`],则认为[`val`]为0
-    fn is_zero(&self, val: f64) -> bool {
-        is_zero(val)
-    }
-}
+pub trait Engine: EngineInit + EngineTrade + EngineAccount + EngineMarket + Send + Sync {}
 
 /// 引擎初始化
 pub trait EngineInit: Send + Sync {
@@ -56,6 +16,8 @@ pub trait EngineInit: Send + Sync {
 /// 引擎交易
 #[async_trait]
 pub trait EngineTrade: Send + Sync {
+    /// 获取当前交易时间
+    fn now(&self) -> DateTime<Utc>;
     /// 市价开多
     /// <br> [`symbol`]: 交易对
     /// <br> [`size`]: 数量
