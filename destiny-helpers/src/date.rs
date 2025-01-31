@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Datelike, Duration, DurationRound, TimeZone, Utc};
 
 /// 毫秒转为日期
 pub fn ms_to_date(ms: i64) -> Result<DateTime<Utc>> {
@@ -43,4 +43,34 @@ pub fn str_to_date(s: &str) -> Result<DateTime<Utc>> {
         return Err(anyhow!("日期转换失败: {}", s));
     };
     Ok(t)
+}
+
+/// 将日期截断到秒
+pub fn truncate_date_to_second(date: DateTime<Utc>) -> Result<DateTime<Utc>> {
+    Ok(date.duration_trunc(Duration::seconds(1))?)
+}
+
+/// 将日期截断到分钟
+pub fn truncate_date_to_minute(date: DateTime<Utc>) -> Result<DateTime<Utc>> {
+    Ok(date.duration_trunc(Duration::minutes(1))?)
+}
+
+/// 将日期截断到小时
+pub fn truncate_date_to_hour(date: DateTime<Utc>) -> Result<DateTime<Utc>> {
+    Ok(date.duration_trunc(Duration::hours(1))?)
+}
+
+/// 将日期截断到天
+pub fn truncate_date_to_day(date: DateTime<Utc>) -> Result<DateTime<Utc>> {
+    Ok(date.duration_trunc(Duration::days(1))?)
+}
+
+/// 将日期截断到月
+pub fn truncate_date_to_month(date: DateTime<Utc>) -> Result<DateTime<Utc>> {
+    truncate_date_to_day(date.with_day(1).ok_or(anyhow!("日期转换失败"))?)
+}
+
+/// 将日期截断到年
+pub fn truncate_date_to_year(date: DateTime<Utc>) -> Result<DateTime<Utc>> {
+    truncate_date_to_month(date.with_month(1).ok_or(anyhow!("日期转换失败"))?)
 }
