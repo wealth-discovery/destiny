@@ -6,6 +6,7 @@ use derive_builder::Builder;
 use destiny_helpers::prelude::*;
 use destiny_types::prelude::*;
 use parking_lot::Mutex;
+use rayon::prelude::*;
 use std::sync::Arc;
 
 /// 回测配置
@@ -586,47 +587,140 @@ impl EngineTrade for Backtest {
         );
         Ok(order_id)
     }
-    async fn order_candle(&self, symbol: &str, order_id: &str) -> Result<()> {
-        todo!()
+    async fn order_cancel(&self, id: &str) -> Result<()> {
+        self.account.lock().orders.remove(id);
+        Ok(())
     }
-    async fn orders_cancel(&self, symbol: &str, order_ids: &[&str]) -> Result<()> {
-        todo!()
+    async fn orders_cancel(&self, ids: &[&str]) -> Result<()> {
+        for id in ids {
+            self.account.lock().orders.remove(*id);
+        }
+        Ok(())
     }
     async fn leverage_set(&self, symbol: &str, leverage: u32) -> Result<()> {
-        todo!()
+        ensure!(leverage >= 1, "杠杆倍率必须大于等于1");
+        self.account
+            .lock()
+            .positions
+            .get_mut(symbol)
+            .unwrap()
+            .leverage = leverage;
+        Ok(())
     }
-    fn leverage(&self, symbol: &str) -> Result<u32> {
-        todo!()
+    fn leverage(&self, symbol: &str) -> u32 {
+        self.account
+            .lock()
+            .positions
+            .get(symbol)
+            .map(|p| p.leverage)
+            .unwrap_or(1)
     }
-    fn order(&self, symbol: &str, order_id: &str) -> Result<Option<Order>> {
-        todo!()
+    fn order(&self, id: &str) -> Option<Order> {
+        self.account.lock().orders.get(id).cloned()
     }
-    fn orders(&self, symbol: &str) -> Result<Vec<Order>> {
-        todo!()
+    fn orders(&self, symbol: &str) -> Vec<Order> {
+        self.account
+            .lock()
+            .orders
+            .par_iter()
+            .filter_map(|(_, o)| {
+                if o.symbol.as_str() == symbol {
+                    Some(o.to_owned())
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
-    fn orders_long(&self, symbol: &str) -> Result<Vec<Order>> {
-        todo!()
+    fn orders_long(&self, symbol: &str) -> Vec<Order> {
+        self.account
+            .lock()
+            .orders
+            .par_iter()
+            .filter_map(|(_, o)| {
+                if o.symbol.as_str() == symbol && o.side == TradeSide::Long {
+                    Some(o.to_owned())
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
-    fn orders_open_long(&self, symbol: &str) -> Result<Vec<Order>> {
-        todo!()
+    fn orders_open_long(&self, symbol: &str) -> Vec<Order> {
+        self.account
+            .lock()
+            .orders
+            .par_iter()
+            .filter_map(|(_, o)| {
+                if o.symbol.as_str() == symbol && o.side == TradeSide::Long && !o.reduce_only {
+                    Some(o.to_owned())
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
-    fn orders_close_long(&self, symbol: &str) -> Result<Vec<Order>> {
-        todo!()
+    fn orders_close_long(&self, symbol: &str) -> Vec<Order> {
+        self.account
+            .lock()
+            .orders
+            .par_iter()
+            .filter_map(|(_, o)| {
+                if o.symbol.as_str() == symbol && o.side == TradeSide::Long && o.reduce_only {
+                    Some(o.to_owned())
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
-    fn orders_short(&self, symbol: &str) -> Result<Vec<Order>> {
-        todo!()
+    fn orders_short(&self, symbol: &str) -> Vec<Order> {
+        self.account
+            .lock()
+            .orders
+            .par_iter()
+            .filter_map(|(_, o)| {
+                if o.symbol.as_str() == symbol && o.side == TradeSide::Short {
+                    Some(o.to_owned())
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
-    fn orders_open_short(&self, symbol: &str) -> Result<Vec<Order>> {
-        todo!()
+    fn orders_open_short(&self, symbol: &str) -> Vec<Order> {
+        self.account
+            .lock()
+            .orders
+            .par_iter()
+            .filter_map(|(_, o)| {
+                if o.symbol.as_str() == symbol && o.side == TradeSide::Short && !o.reduce_only {
+                    Some(o.to_owned())
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
-    fn orders_close_short(&self, symbol: &str) -> Result<Vec<Order>> {
-        todo!()
+    fn orders_close_short(&self, symbol: &str) -> Vec<Order> {
+        self.account
+            .lock()
+            .orders
+            .par_iter()
+            .filter_map(|(_, o)| {
+                if o.symbol.as_str() == symbol && o.side == TradeSide::Short && o.reduce_only {
+                    Some(o.to_owned())
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 }
 
 impl EngineAccount for Backtest {
     fn cash(&self) -> Cash {
-        self.account.lock().cash.clone()
+        self.account.lock().cash.to_owned()
     }
     fn position(&self, symbol: &str) -> Result<SymbolPosition> {
         self.account

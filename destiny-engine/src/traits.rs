@@ -63,45 +63,42 @@ pub trait EngineTrade: Send + Sync {
     /// <br> 返回订单ID
     async fn close_limit_short(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
     /// 撤单
-    /// <br> [`symbol`]: 交易对
-    /// <br> [`order_id`]: 订单ID
-    async fn order_candle(&self, symbol: &str, order_id: &str) -> Result<()>;
+    /// <br> [`id`]: 订单ID
+    async fn order_cancel(&self, id: &str) -> Result<()>;
     /// 批量撤单
-    /// <br> [`symbol`]: 交易对
-    /// <br> [`order_ids`]: 订单ID列表
-    async fn orders_cancel(&self, symbol: &str, order_ids: &[&str]) -> Result<()>;
+    /// <br> [`ids`]: 订单ID列表
+    async fn orders_cancel(&self, ids: &[&str]) -> Result<()>;
     /// 设置杠杆倍率
     /// <br> [`symbol`]: 交易对
     /// <br> [`leverage`]: 杠杆倍率
     async fn leverage_set(&self, symbol: &str, leverage: u32) -> Result<()>;
     /// 获取杠杆倍率
     /// <br> [`symbol`]: 交易对
-    fn leverage(&self, symbol: &str) -> Result<u32>;
+    fn leverage(&self, symbol: &str) -> u32;
     /// 获取订单
-    /// <br> [`symbol`]: 交易对
-    /// <br> [`order_id`]: 订单ID
-    fn order(&self, symbol: &str, order_id: &str) -> Result<Option<Order>>;
+    /// <br> [`id`]: 订单ID
+    fn order(&self, id: &str) -> Option<Order>;
     /// 获取交易对订单
     /// <br> [`symbol`]: 交易对
-    fn orders(&self, symbol: &str) -> Result<Vec<Order>>;
+    fn orders(&self, symbol: &str) -> Vec<Order>;
     /// 获取多头订单
     /// <br> [`symbol`]: 交易对
-    fn orders_long(&self, symbol: &str) -> Result<Vec<Order>>;
+    fn orders_long(&self, symbol: &str) -> Vec<Order>;
     /// 获取多头开仓订单
     /// <br> [`symbol`]: 交易对
-    fn orders_open_long(&self, symbol: &str) -> Result<Vec<Order>>;
+    fn orders_open_long(&self, symbol: &str) -> Vec<Order>;
     /// 获取多头平仓订单
     /// <br> [`symbol`]: 交易对
-    fn orders_close_long(&self, symbol: &str) -> Result<Vec<Order>>;
+    fn orders_close_long(&self, symbol: &str) -> Vec<Order>;
     /// 获取空头订单
     /// <br> [`symbol`]: 交易对
-    fn orders_short(&self, symbol: &str) -> Result<Vec<Order>>;
+    fn orders_short(&self, symbol: &str) -> Vec<Order>;
     /// 获取空头开仓订单
     /// <br> [`symbol`]: 交易对
-    fn orders_open_short(&self, symbol: &str) -> Result<Vec<Order>>;
+    fn orders_open_short(&self, symbol: &str) -> Vec<Order>;
     /// 获取空头平仓订单
     /// <br> [`symbol`]: 交易对
-    fn orders_close_short(&self, symbol: &str) -> Result<Vec<Order>>;
+    fn orders_close_short(&self, symbol: &str) -> Vec<Order>;
 }
 
 pub trait EngineAccount: Send + Sync {

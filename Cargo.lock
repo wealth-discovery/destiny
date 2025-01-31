@@ -613,6 +613,7 @@ dependencies = [
  "futures",
  "parking_lot",
  "polars",
+ "rayon",
  "reqwest",
  "sqlx",
  "strum",

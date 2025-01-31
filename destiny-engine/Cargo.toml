@@ -25,3 +25,4 @@ async_zip = { workspace = true }
 strum = { workspace = true }
 parking_lot = { workspace = true }
 polars = { workspace = true }
+rayon = { workspace = true }
