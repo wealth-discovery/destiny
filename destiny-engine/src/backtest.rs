@@ -58,7 +58,7 @@ impl EngineInit for Backtest {
                     size_min: 1e-8,
                     size_max: 1e8,
                     size_tick: 1e-8,
-                    cash_min: 1e-8,
+                    amount_min: 1e-8,
                     order_max: 200,
                 },
                 index: SymbolIndex {
@@ -84,43 +84,504 @@ impl EngineTrade for Backtest {
     async fn open_long_market(&self, symbol: &str, size: f64) -> Result<String> {
         let symbol_index = self.symbol_index(symbol)?;
         let symbol_rule = self.symbol_rule(symbol)?;
+        let cash = self.cash();
         let position = self.position(symbol)?;
+
         let size = (symbol_rule.size_tick % size).to_safe();
         ensure!(
             size >= symbol_rule.size_min,
-            "数量小于: {}",
-            symbol_rule.size_min
+            "最小数量限制: 数量({}),限制({})",
+            size,
+            symbol_rule.size_min,
         );
-        let cash = (size * symbol_index.last_price).to_safe();
         ensure!(
-            cash >= symbol_rule.cash_min,
-            "金额小于: {}",
-            symbol_rule.cash_min
+            size <= symbol_rule.size_max,
+            "最大数量限制: 数量({}),限制({})",
+            size,
+            symbol_rule.size_max,
         );
-        let margin = (cash / position.leverage as f64).to_safe();
 
-        todo!()
+        let amount = (size * symbol_index.mark_price).to_safe();
+        ensure!(
+            amount >= symbol_rule.amount_min,
+            "最小金额限制: 金额({}),限制({})",
+            amount,
+            symbol_rule.amount_min,
+        );
+
+        let margin = (amount / position.leverage as f64).to_safe();
+        ensure!(
+            cash.available >= margin,
+            "保证金不足: 保证金({}),可用({})",
+            margin,
+            cash.available
+        );
+
+        self.account.lock().cash.available -= margin;
+        self.account.lock().cash.frozen += margin;
+
+        let order_id = String::gen_id();
+        self.account.lock().orders.insert(
+            order_id.clone(),
+            Order {
+                id: order_id.clone(),
+                symbol: symbol.to_string(),
+                type_: TradeType::Market,
+                side: TradeSide::Long,
+                reduce_only: false,
+                status: OrderStatus::Created,
+                price: 0.,
+                size,
+                deal_price: 0.,
+                deal_size: 0.,
+                deal_fee: 0.,
+                create_time: self.now(),
+            },
+        );
+        Ok(order_id)
     }
     async fn open_long_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
-        todo!()
+        let symbol_index = self.symbol_index(symbol)?;
+        let symbol_rule = self.symbol_rule(symbol)?;
+        let cash = self.cash();
+        let position = self.position(symbol)?;
+
+        let size = (symbol_rule.size_tick % size).to_safe();
+        ensure!(
+            size >= symbol_rule.size_min,
+            "最小数量限制: 数量({}),限制({})",
+            size,
+            symbol_rule.size_min,
+        );
+        ensure!(
+            size <= symbol_rule.size_max,
+            "最大数量限制: 数量({}),限制({})",
+            size,
+            symbol_rule.size_max,
+        );
+
+        let price = (symbol_rule.price_tick % price).to_safe();
+        ensure!(
+            price >= symbol_rule.price_min,
+            "最低价格限制: 价格({}),限制({})",
+            price,
+            symbol_rule.price_min
+        );
+        ensure!(
+            price <= symbol_rule.price_max,
+            "最高价格限制: 价格({}),限制({})",
+            price,
+            symbol_rule.price_max
+        );
+
+        let amount = (size * price).to_safe();
+        ensure!(
+            amount >= symbol_rule.amount_min,
+            "最小金额限制: 金额({}),限制({})",
+            amount,
+            symbol_rule.amount_min
+        );
+
+        let margin = (amount / position.leverage as f64).to_safe();
+        ensure!(
+            cash.available >= margin,
+            "保证金不足: 保证金({}),可用({})",
+            margin,
+            cash.available
+        );
+
+        self.account.lock().cash.available -= margin;
+        self.account.lock().cash.frozen += margin;
+
+        let order_id = String::gen_id();
+        self.account.lock().orders.insert(
+            order_id.clone(),
+            Order {
+                id: order_id.clone(),
+                symbol: symbol.to_string(),
+                type_: TradeType::Limit,
+                side: TradeSide::Long,
+                reduce_only: false,
+                status: OrderStatus::Created,
+                price,
+                size,
+                deal_price: 0.,
+                deal_size: 0.,
+                deal_fee: 0.,
+                create_time: self.now(),
+            },
+        );
+        Ok(order_id)
     }
     async fn close_long_market(&self, symbol: &str, size: f64) -> Result<String> {
-        todo!()
+        let symbol_index = self.symbol_index(symbol)?;
+        let symbol_rule = self.symbol_rule(symbol)?;
+        let cash = self.cash();
+        let position = self.position(symbol)?;
+
+        let size = (symbol_rule.size_tick % size).to_safe();
+        ensure!(
+            size >= symbol_rule.size_min,
+            "最小数量限制: 数量({}),限制({})",
+            size,
+            symbol_rule.size_min
+        );
+
+        ensure!(
+            position.long.size >= size,
+            "持仓数量不足: 数量({}),限制({})",
+            position.long.size,
+            size
+        );
+
+        self.account
+            .lock()
+            .positions
+            .get_mut(symbol)
+            .unwrap()
+            .long
+            .available -= size;
+        self.account
+            .lock()
+            .positions
+            .get_mut(symbol)
+            .unwrap()
+            .long
+            .frozen += size;
+
+        let order_id = String::gen_id();
+        self.account.lock().orders.insert(
+            order_id.clone(),
+            Order {
+                id: order_id.clone(),
+                symbol: symbol.to_string(),
+                type_: TradeType::Market,
+                side: TradeSide::Long,
+                reduce_only: true,
+                status: OrderStatus::Created,
+                price: 0.,
+                size,
+                deal_price: 0.,
+                deal_size: 0.,
+                deal_fee: 0.,
+                create_time: self.now(),
+            },
+        );
+        Ok(order_id)
     }
     async fn close_long_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
-        todo!()
+        let symbol_index = self.symbol_index(symbol)?;
+        let symbol_rule = self.symbol_rule(symbol)?;
+        let cash = self.cash();
+        let position = self.position(symbol)?;
+
+        let size = (symbol_rule.size_tick % size).to_safe();
+        ensure!(
+            size >= symbol_rule.size_min,
+            "最小数量限制: 数量({}),限制({})",
+            size,
+            symbol_rule.size_min
+        );
+
+        let price = (symbol_rule.price_tick % price).to_safe();
+        ensure!(
+            price >= symbol_rule.price_min,
+            "最低价格限制: 价格({}),限制({})",
+            price,
+            symbol_rule.price_min
+        );
+        ensure!(
+            price <= symbol_rule.price_max,
+            "最高价格限制: 价格({}),限制({})",
+            price,
+            symbol_rule.price_max
+        );
+
+        self.account
+            .lock()
+            .positions
+            .get_mut(symbol)
+            .unwrap()
+            .long
+            .available -= size;
+        self.account
+            .lock()
+            .positions
+            .get_mut(symbol)
+            .unwrap()
+            .long
+            .frozen += size;
+
+        let order_id = String::gen_id();
+        self.account.lock().orders.insert(
+            order_id.clone(),
+            Order {
+                id: order_id.clone(),
+                symbol: symbol.to_string(),
+                type_: TradeType::Limit,
+                side: TradeSide::Long,
+                reduce_only: true,
+                status: OrderStatus::Created,
+                price,
+                size,
+                deal_price: 0.,
+                deal_size: 0.,
+                deal_fee: 0.,
+                create_time: self.now(),
+            },
+        );
+        Ok(order_id)
     }
     async fn open_short_market(&self, symbol: &str, size: f64) -> Result<String> {
-        todo!()
+        let symbol_index = self.symbol_index(symbol)?;
+        let symbol_rule = self.symbol_rule(symbol)?;
+        let cash = self.cash();
+        let position = self.position(symbol)?;
+
+        let size = (symbol_rule.size_tick % size).to_safe();
+        ensure!(
+            size >= symbol_rule.size_min,
+            "最小数量限制: 数量({}),限制({})",
+            size,
+            symbol_rule.size_min
+        );
+        ensure!(
+            size <= symbol_rule.size_max,
+            "最大数量限制: 数量({}),限制({})",
+            size,
+            symbol_rule.size_max,
+        );
+
+        let amount = (size * symbol_index.mark_price).to_safe();
+        ensure!(
+            amount >= symbol_rule.amount_min,
+            "最小金额限制: 金额({}),限制({})",
+            amount,
+            symbol_rule.amount_min
+        );
+
+        let margin = (amount / position.leverage as f64).to_safe();
+        ensure!(
+            cash.available >= margin,
+            "保证金不足: 保证金({}),可用({})",
+            margin,
+            cash.available
+        );
+
+        self.account.lock().cash.available -= margin;
+        self.account.lock().cash.frozen += margin;
+
+        let order_id = String::gen_id();
+        self.account.lock().orders.insert(
+            order_id.clone(),
+            Order {
+                id: order_id.clone(),
+                symbol: symbol.to_string(),
+                type_: TradeType::Market,
+                side: TradeSide::Short,
+                reduce_only: false,
+                status: OrderStatus::Created,
+                price: 0.,
+                size,
+                deal_price: 0.,
+                deal_size: 0.,
+                deal_fee: 0.,
+                create_time: self.now(),
+            },
+        );
+        Ok(order_id)
     }
     async fn open_short_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
-        todo!()
+        let symbol_index = self.symbol_index(symbol)?;
+        let symbol_rule = self.symbol_rule(symbol)?;
+        let cash = self.cash();
+        let position = self.position(symbol)?;
+
+        let size = (symbol_rule.size_tick % size).to_safe();
+        ensure!(
+            size >= symbol_rule.size_min,
+            "最小数量限制: 数量({}),限制({})",
+            size,
+            symbol_rule.size_min
+        );
+        ensure!(
+            size <= symbol_rule.size_max,
+            "最大数量限制: 数量({}),限制({})",
+            size,
+            symbol_rule.size_max,
+        );
+
+        let price = (symbol_rule.price_tick % price).to_safe();
+        ensure!(
+            price >= symbol_rule.price_min,
+            "最低价格限制: 价格({}),限制({})",
+            price,
+            symbol_rule.price_min
+        );
+        ensure!(
+            price <= symbol_rule.price_max,
+            "最高价格限制: 价格({}),限制({})",
+            price,
+            symbol_rule.price_max
+        );
+
+        let amount = (size * price).to_safe();
+        ensure!(
+            amount >= symbol_rule.amount_min,
+            "最小金额限制: 金额({}),限制({})",
+            amount,
+            symbol_rule.amount_min
+        );
+
+        let margin = (amount / position.leverage as f64).to_safe();
+        ensure!(
+            cash.available >= margin,
+            "保证金不足: 保证金({}),可用({})",
+            margin,
+            cash.available
+        );
+
+        self.account.lock().cash.available -= margin;
+        self.account.lock().cash.frozen += margin;
+
+        let order_id = String::gen_id();
+        self.account.lock().orders.insert(
+            order_id.clone(),
+            Order {
+                id: order_id.clone(),
+                symbol: symbol.to_string(),
+                type_: TradeType::Limit,
+                side: TradeSide::Short,
+                reduce_only: false,
+                status: OrderStatus::Created,
+                price,
+                size,
+                deal_price: 0.,
+                deal_size: 0.,
+                deal_fee: 0.,
+                create_time: self.now(),
+            },
+        );
+        Ok(order_id)
     }
     async fn close_short_market(&self, symbol: &str, size: f64) -> Result<String> {
-        todo!()
+        let symbol_index = self.symbol_index(symbol)?;
+        let symbol_rule = self.symbol_rule(symbol)?;
+        let cash = self.cash();
+        let position = self.position(symbol)?;
+
+        let size = (symbol_rule.size_tick % size).to_safe();
+        ensure!(
+            size >= symbol_rule.size_min,
+            "最小数量限制: 数量({}),限制({})",
+            size,
+            symbol_rule.size_min
+        );
+
+        ensure!(
+            position.short.size >= size,
+            "持仓数量不足: 数量({}),限制({})",
+            position.short.size,
+            size
+        );
+
+        self.account
+            .lock()
+            .positions
+            .get_mut(symbol)
+            .unwrap()
+            .short
+            .available -= size;
+        self.account
+            .lock()
+            .positions
+            .get_mut(symbol)
+            .unwrap()
+            .short
+            .frozen += size;
+
+        let order_id = String::gen_id();
+        self.account.lock().orders.insert(
+            order_id.clone(),
+            Order {
+                id: order_id.clone(),
+                symbol: symbol.to_string(),
+                type_: TradeType::Market,
+                side: TradeSide::Short,
+                reduce_only: true,
+                status: OrderStatus::Created,
+                price: 0.,
+                size,
+                deal_price: 0.,
+                deal_size: 0.,
+                deal_fee: 0.,
+                create_time: self.now(),
+            },
+        );
+        Ok(order_id)
     }
     async fn close_short_limit(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
-        todo!()
+        let symbol_index = self.symbol_index(symbol)?;
+        let symbol_rule = self.symbol_rule(symbol)?;
+        let cash = self.cash();
+        let position = self.position(symbol)?;
+
+        let size = (symbol_rule.size_tick % size).to_safe();
+        ensure!(
+            size >= symbol_rule.size_min,
+            "最小数量限制: 数量({}),限制({})",
+            size,
+            symbol_rule.size_min
+        );
+
+        let price = (symbol_rule.price_tick % price).to_safe();
+        ensure!(
+            price >= symbol_rule.price_min,
+            "最低价格限制: 价格({}),限制({})",
+            price,
+            symbol_rule.price_min
+        );
+        ensure!(
+            price <= symbol_rule.price_max,
+            "最高价格限制: 价格({}),限制({})",
+            price,
+            symbol_rule.price_max
+        );
+
+        self.account
+            .lock()
+            .positions
+            .get_mut(symbol)
+            .unwrap()
+            .short
+            .available -= size;
+        self.account
+            .lock()
+            .positions
+            .get_mut(symbol)
+            .unwrap()
+            .short
+            .frozen += size;
+
+        let order_id = String::gen_id();
+        self.account.lock().orders.insert(
+            order_id.clone(),
+            Order {
+                id: order_id.clone(),
+                symbol: symbol.to_string(),
+                type_: TradeType::Limit,
+                side: TradeSide::Short,
+                reduce_only: true,
+                status: OrderStatus::Created,
+                price,
+                size,
+                deal_price: 0.,
+                deal_size: 0.,
+                deal_fee: 0.,
+                create_time: self.now(),
+            },
+        );
+        Ok(order_id)
     }
     async fn cancel_order(&self, symbol: &str, order_id: &str) -> Result<()> {
         todo!()

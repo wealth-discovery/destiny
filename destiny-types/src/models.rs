@@ -112,7 +112,7 @@ pub struct SymbolRule {
     /// 数量刻度
     pub size_tick: f64,
     /// 最小下单金额
-    pub cash_min: f64,
+    pub amount_min: f64,
     /// 最大订单数量
     pub order_max: i64,
 }
