@@ -722,14 +722,6 @@ where
     }
 
     pub async fn take(&mut self, date: DateTime<Utc>) -> Result<Option<D::T>> {
-        if let Some(curr_data) = &self.curr_data {
-            match curr_data.datetime().cmp(&date) {
-                Ordering::Equal => return Ok(Some(curr_data.to_owned())),
-                Ordering::Greater => return Ok(None),
-                _ => {}
-            }
-        }
-
         while let Some(data) = self.data_rx.recv().await {
             self.curr_data = Some(data);
             if let Some(curr_data) = &self.curr_data {
