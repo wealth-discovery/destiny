@@ -35,6 +35,8 @@ pub trait DateTimeSupport {
     fn truncate_month(&self) -> Result<DateTime<Utc>>;
     /// 将日期截断到年
     fn truncate_year(&self) -> Result<DateTime<Utc>>;
+    /// 格式化日期 [`202501`]
+    fn str_ym(&self) -> String;
     /// 格式化日期 [`20250102`]
     fn str_ymd(&self) -> String;
     /// 格式化日期 [`20250102_0304`]
@@ -72,6 +74,10 @@ impl DateTimeSupport for DateTime<Utc> {
 
     fn truncate_year(&self) -> Result<DateTime<Utc>> {
         self.with_month(1).ok_or(anyhow!("日期转换失败"))
+    }
+
+    fn str_ym(&self) -> String {
+        self.format("%Y%m").to_string()
     }
 
     fn str_ymd(&self) -> String {

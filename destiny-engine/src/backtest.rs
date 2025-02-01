@@ -1,7 +1,7 @@
 use crate::traits::*;
 use anyhow::{anyhow, ensure, Result};
 use async_trait::async_trait;
-use chrono::{DateTime, Duration, DurationRound, Timelike, Utc};
+use chrono::{DateTime, Duration, Timelike, Utc};
 use derive_builder::Builder;
 use destiny_helpers::prelude::*;
 use destiny_types::prelude::*;
@@ -127,7 +127,7 @@ impl EngineTrade for Backtest {
             Order {
                 id: order_id.clone(),
                 symbol: symbol.to_string(),
-                type_: TradeType::Market,
+                r#type: TradeType::Market,
                 side: TradeSide::Long,
                 reduce_only: false,
                 status: OrderStatus::Created,
@@ -199,7 +199,7 @@ impl EngineTrade for Backtest {
             Order {
                 id: order_id.clone(),
                 symbol: symbol.to_string(),
-                type_: TradeType::Limit,
+                r#type: TradeType::Limit,
                 side: TradeSide::Long,
                 reduce_only: false,
                 status: OrderStatus::Created,
@@ -253,7 +253,7 @@ impl EngineTrade for Backtest {
             Order {
                 id: order_id.clone(),
                 symbol: symbol.to_string(),
-                type_: TradeType::Market,
+                r#type: TradeType::Market,
                 side: TradeSide::Long,
                 reduce_only: true,
                 status: OrderStatus::Created,
@@ -321,7 +321,7 @@ impl EngineTrade for Backtest {
             Order {
                 id: order_id.clone(),
                 symbol: symbol.to_string(),
-                type_: TradeType::Limit,
+                r#type: TradeType::Limit,
                 side: TradeSide::Long,
                 reduce_only: true,
                 status: OrderStatus::Created,
@@ -380,7 +380,7 @@ impl EngineTrade for Backtest {
             Order {
                 id: order_id.clone(),
                 symbol: symbol.to_string(),
-                type_: TradeType::Market,
+                r#type: TradeType::Market,
                 side: TradeSide::Short,
                 reduce_only: false,
                 status: OrderStatus::Created,
@@ -452,7 +452,7 @@ impl EngineTrade for Backtest {
             Order {
                 id: order_id.clone(),
                 symbol: symbol.to_string(),
-                type_: TradeType::Limit,
+                r#type: TradeType::Limit,
                 side: TradeSide::Short,
                 reduce_only: false,
                 status: OrderStatus::Created,
@@ -506,7 +506,7 @@ impl EngineTrade for Backtest {
             Order {
                 id: order_id.clone(),
                 symbol: symbol.to_string(),
-                type_: TradeType::Market,
+                r#type: TradeType::Market,
                 side: TradeSide::Short,
                 reduce_only: true,
                 status: OrderStatus::Created,
@@ -574,7 +574,7 @@ impl EngineTrade for Backtest {
             Order {
                 id: order_id.clone(),
                 symbol: symbol.to_string(),
-                type_: TradeType::Limit,
+                r#type: TradeType::Limit,
                 side: TradeSide::Short,
                 reduce_only: true,
                 status: OrderStatus::Created,
@@ -752,8 +752,8 @@ impl EngineMarket for Backtest {
 
 impl Backtest {
     fn new(mut config: BacktestConfig) -> Result<Arc<Backtest>> {
-        config.begin = config.begin.duration_trunc(Duration::minutes(1))?;
-        config.end = config.end.duration_trunc(Duration::minutes(1))?;
+        config.begin = config.begin.truncate_minute()?;
+        config.end = config.end.truncate_minute()?;
         ensure!(config.begin < config.end, "开始时间必须小于结束时间");
 
         config.cash = config.cash.to_safe();
@@ -796,13 +796,13 @@ impl Backtest {
             "未初始化交易对"
         );
 
-        // let symbols = backtest
-        //     .account
-        //     .lock()
-        //     .symbols
-        //     .keys()
-        //     .cloned()
-        //     .collect::<Vec<String>>();
+        let symbols = backtest
+            .account
+            .lock()
+            .symbols
+            .keys()
+            .cloned()
+            .collect::<Vec<String>>();
 
         strategy.on_start(backtest.clone()).await?;
 
@@ -814,7 +814,9 @@ impl Backtest {
         while begin <= end {
             *backtest.trade_time.lock() = begin;
 
-            // 市场行情变化事件
+            // 更新行情
+            for symbol in symbols.iter() {}
+
             // 每日事件
             if begin.hour() == 0 && begin.minute() == 0 {
                 let event_instant = Instant::now();

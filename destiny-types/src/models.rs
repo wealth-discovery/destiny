@@ -10,10 +10,10 @@ pub struct Order {
     /// 交易对
     pub symbol: String,
     /// 交易类型
-    pub type_: TradeType,
+    pub r#type: TradeType,
     /// 交易方向
     pub side: TradeSide,
-    /// 是否只减仓
+    /// 只减仓
     pub reduce_only: bool,
     /// 订单状态
     pub status: OrderStatus,

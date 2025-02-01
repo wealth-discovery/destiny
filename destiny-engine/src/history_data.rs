@@ -9,6 +9,7 @@ use strum::IntoEnumIterator;
 use tokio::{
     fs::{create_dir_all, File},
     io::{AsyncWriteExt, BufReader},
+    sync::mpsc::{channel, Receiver},
     time::sleep,
 };
 
@@ -444,10 +445,14 @@ impl SyncHistoryData {
             //     .await;
 
             for interval in KlineInterval::iter() {
-                if matches!(
-                    interval,
-                    KlineInterval::D3 | KlineInterval::W1 | KlineInterval::Mo1
-                ) {
+                // if matches!(
+                //     interval,
+                //     KlineInterval::D3 | KlineInterval::W1 | KlineInterval::Mo1
+                // ) {
+                //     continue;
+                // }
+
+                if interval != KlineInterval::M1 {
                     continue;
                 }
 
@@ -495,7 +500,7 @@ impl SyncHistoryData {
 }
 
 pub trait DecodeCsvRecord {
-    type T;
+    type T: Send + 'static;
     fn decode(record: &csv_async::StringRecord) -> Result<Self::T>;
 }
 
@@ -505,8 +510,11 @@ impl HistoryData {
     pub async fn csv_read<D>(path: &PathBuf) -> Result<Vec<D::T>>
     where
         D: DecodeCsvRecord,
-        D::T: Send,
     {
+        if !path.exists() {
+            return Ok(vec![]);
+        }
+
         let mut reader = csv_async::AsyncReader::from_reader(File::open(path).await?);
         let mut records = reader.records();
 
@@ -626,5 +634,72 @@ impl DecodeCsvRecord for Kline {
             trades,
             time: Default::default(),
         })
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HistoryDataStreamType {
+    FundingRate,
+    IndexPriceKlines,
+    Klines,
+    MarkPriceKlines,
+    PremiumIndexKlines,
+}
+
+pub struct HistoryDataStream<D>
+where
+    D: DecodeCsvRecord,
+{
+    data_rx: Receiver<D::T>,
+    curr_data: Option<D::T>,
+}
+
+impl<D> HistoryDataStream<D>
+where
+    D: DecodeCsvRecord,
+{
+    pub fn new(
+        symbol: String,
+        r#type: HistoryDataStreamType,
+        begin: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Self {
+        let (tx, data_rx) = channel(10000);
+        tokio::spawn(async move {
+            let base_path = PathBuf::cache()?.join("history_data").join(symbol);
+            let base_path = match r#type {
+                HistoryDataStreamType::FundingRate => base_path.join("fundingRate"),
+                HistoryDataStreamType::IndexPriceKlines => {
+                    base_path.join("indexPriceKlines").join("1m")
+                }
+                HistoryDataStreamType::Klines => base_path.join("klines").join("1m"),
+                HistoryDataStreamType::MarkPriceKlines => {
+                    base_path.join("markPriceKlines").join("1m")
+                }
+                HistoryDataStreamType::PremiumIndexKlines => {
+                    base_path.join("premiumIndexKlines").join("1m")
+                }
+            };
+            let mut begin_month = begin.truncate_month()?;
+            let end_month = end.truncate_month()?;
+
+            while begin_month <= end_month {
+                let path = base_path.join(format!("{}.csv", begin_month.str_ym()));
+                let data = HistoryData::csv_read::<D>(&path).await?;
+
+                for item in data {
+                    tx.send(item).await.expect("发送数据失败");
+                }
+
+                begin_month = begin_month + Months::new(1);
+            }
+
+            anyhow::Ok(())
+        });
+
+        Self {
+            data_rx,
+            curr_data: None,
+        }
     }
 }
