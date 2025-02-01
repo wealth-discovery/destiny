@@ -1,9 +1,9 @@
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use async_zip::base::read::seek::ZipFileReader;
 use chrono::{DateTime, Datelike, Duration, Months, Utc};
 use destiny_helpers::prelude::*;
-use destiny_types::enums::KlineInterval;
-use futures::AsyncReadExt;
+use destiny_types::prelude::*;
+use futures::{stream::StreamExt, AsyncReadExt};
 use std::path::PathBuf;
 use strum::IntoEnumIterator;
 use tokio::{
@@ -494,4 +494,137 @@ impl SyncHistoryData {
     }
 }
 
-impl SyncHistoryData {}
+pub trait DecodeCsvRecord {
+    type T;
+    fn decode(record: &csv_async::StringRecord) -> Result<Self::T>;
+}
+
+pub struct HistoryData;
+
+impl HistoryData {
+    pub async fn csv_read<D>(path: &PathBuf) -> Result<Vec<D::T>>
+    where
+        D: DecodeCsvRecord,
+        D::T: Send,
+    {
+        let mut reader = csv_async::AsyncReader::from_reader(File::open(path).await?);
+        let mut records = reader.records();
+
+        let mut result = vec![];
+
+        while let Some(record) = records.next().await {
+            let record = record?;
+            result.push(D::decode(&record)?);
+        }
+
+        Ok(result)
+    }
+}
+
+impl DecodeCsvRecord for FundingRateHistory {
+    type T = Self;
+
+    fn decode(record: &csv_async::StringRecord) -> Result<Self::T> {
+        let time = record
+            .get(0)
+            .ok_or(anyhow!("结算时间不存在"))?
+            .parse::<i64>()?
+            .to_date()?
+            .truncate_hour()?;
+
+        let rate = record
+            .get(2)
+            .ok_or(anyhow!("资金费率不存在"))?
+            .parse::<f64>()?
+            .to_safe();
+
+        Ok(Self {
+            symbol: Default::default(),
+            mark_price: Default::default(),
+            rate,
+            time,
+        })
+    }
+}
+
+impl DecodeCsvRecord for Kline {
+    type T = Self;
+
+    fn decode(record: &csv_async::StringRecord) -> Result<Self::T> {
+        let open_time = record
+            .get(0)
+            .ok_or(anyhow!("开盘时间不存在"))?
+            .parse::<i64>()?
+            .to_date()?
+            .truncate_minute()?;
+
+        let open = record
+            .get(1)
+            .ok_or(anyhow!("开盘价不存在"))?
+            .parse::<f64>()?
+            .to_safe();
+
+        let high = record
+            .get(2)
+            .ok_or(anyhow!("最高价不存在"))?
+            .parse::<f64>()?
+            .to_safe();
+
+        let low = record
+            .get(3)
+            .ok_or(anyhow!("最低价不存在"))?
+            .parse::<f64>()?
+            .to_safe();
+
+        let close = record
+            .get(4)
+            .ok_or(anyhow!("收盘价不存在"))?
+            .parse::<f64>()?
+            .to_safe();
+
+        let size = record
+            .get(5)
+            .ok_or(anyhow!("成交量不存在"))?
+            .parse::<f64>()?
+            .to_safe();
+
+        let cash = record
+            .get(7)
+            .ok_or(anyhow!("成交额不存在"))?
+            .parse::<f64>()?
+            .to_safe();
+
+        let trades = record
+            .get(8)
+            .ok_or(anyhow!("交易笔数不存在"))?
+            .parse::<i64>()?;
+
+        let buy_size = record
+            .get(9)
+            .ok_or(anyhow!("买方成交量不存在"))?
+            .parse::<f64>()?
+            .to_safe();
+
+        let buy_cash = record
+            .get(10)
+            .ok_or(anyhow!("买方成交额不存在"))?
+            .parse::<f64>()?
+            .to_safe();
+
+        Ok(Self {
+            symbol: Default::default(),
+            interval: KlineInterval::M1,
+            open_time,
+            open,
+            high,
+            low,
+            close,
+            size,
+            cash,
+            buy_size,
+            buy_cash,
+            trades,
+            time: Default::default(),
+        })
+    }
+}

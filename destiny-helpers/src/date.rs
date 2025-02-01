@@ -3,14 +3,14 @@ use chrono::{DateTime, Datelike, Duration, DurationRound, TimeZone, Utc};
 
 pub trait I64DateSupport {
     /// 毫秒转换为日期
-    fn to_date(&self, ms: i64) -> Result<DateTime<Utc>>;
+    fn to_date(&self) -> Result<DateTime<Utc>>;
     /// 获取当前时间戳
     fn now_ms() -> i64;
 }
 
 impl I64DateSupport for i64 {
-    fn to_date(&self, ms: i64) -> Result<DateTime<Utc>> {
-        Utc.timestamp_millis_opt(ms)
+    fn to_date(&self) -> Result<DateTime<Utc>> {
+        Utc.timestamp_millis_opt(*self)
             .single()
             .ok_or(anyhow!("毫秒转换日期失败"))
     }

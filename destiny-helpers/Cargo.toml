@@ -9,7 +9,6 @@ repository.workspace = true
 readme.workspace = true
 
 [dependencies]
-destiny-types = { workspace = true }
 chrono = { workspace = true }
 anyhow = { workspace = true }
 uuid = { workspace = true }
