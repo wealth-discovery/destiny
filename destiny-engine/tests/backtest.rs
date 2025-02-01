@@ -16,9 +16,8 @@ impl Strategy for BacktestStrategy {
 
     async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
         let cash = engine.cash();
-        if cash.available > 0. {
-            engine.open_market_long("ETHUSDT", 0.01).await?;
-        }
+        engine.open_market_long("ETHUSDT", 1.).await?;
+        info!("{}", cash.available);
         Ok(())
     }
 }

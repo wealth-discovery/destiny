@@ -110,7 +110,7 @@ impl EngineTrade for Backtest {
         let cash = self.cash();
         let position = self.position(symbol)?;
 
-        let size = (symbol_rule.size_tick % size).to_safe();
+        let size = (size - (symbol_rule.size_tick % size)).to_safe();
         ensure!(
             size >= symbol_rule.size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -168,7 +168,7 @@ impl EngineTrade for Backtest {
         let cash = self.cash();
         let position = self.position(symbol)?;
 
-        let size = (symbol_rule.size_tick % size).to_safe();
+        let size = (size - (symbol_rule.size_tick % size)).to_safe();
         ensure!(
             size >= symbol_rule.size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -182,7 +182,7 @@ impl EngineTrade for Backtest {
             symbol_rule.size_max,
         );
 
-        let price = (symbol_rule.price_tick % price).to_safe();
+        let price = (price - (symbol_rule.price_tick % price)).to_safe();
         ensure!(
             price >= symbol_rule.price_min,
             "最低价格限制: 价格({}),限制({})",
@@ -239,7 +239,7 @@ impl EngineTrade for Backtest {
         let symbol_rule = self.symbol_rule(symbol)?;
         let position = self.position(symbol)?;
 
-        let size = (symbol_rule.size_tick % size).to_safe();
+        let size = (size - (symbol_rule.size_tick % size)).to_safe();
         ensure!(
             size >= symbol_rule.size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -293,7 +293,7 @@ impl EngineTrade for Backtest {
         let symbol_rule = self.symbol_rule(symbol)?;
         let position = self.position(symbol)?;
 
-        let size = (symbol_rule.size_tick % size).to_safe();
+        let size = (size - (symbol_rule.size_tick % size)).to_safe();
         ensure!(
             size >= symbol_rule.size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -301,7 +301,7 @@ impl EngineTrade for Backtest {
             symbol_rule.size_min
         );
 
-        let price = (symbol_rule.price_tick % price).to_safe();
+        let price = (price - (symbol_rule.price_tick % price)).to_safe();
         ensure!(
             price >= symbol_rule.price_min,
             "最低价格限制: 价格({}),限制({})",
@@ -363,7 +363,7 @@ impl EngineTrade for Backtest {
         let cash = self.cash();
         let position = self.position(symbol)?;
 
-        let size = (symbol_rule.size_tick % size).to_safe();
+        let size = (size - (symbol_rule.size_tick % size)).to_safe();
         ensure!(
             size >= symbol_rule.size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -421,7 +421,7 @@ impl EngineTrade for Backtest {
         let cash = self.cash();
         let position = self.position(symbol)?;
 
-        let size = (symbol_rule.size_tick % size).to_safe();
+        let size = (size - (symbol_rule.size_tick % size)).to_safe();
         ensure!(
             size >= symbol_rule.size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -435,7 +435,7 @@ impl EngineTrade for Backtest {
             symbol_rule.size_max,
         );
 
-        let price = (symbol_rule.price_tick % price).to_safe();
+        let price = (price - (symbol_rule.price_tick % price)).to_safe();
         ensure!(
             price >= symbol_rule.price_min,
             "最低价格限制: 价格({}),限制({})",
@@ -492,7 +492,7 @@ impl EngineTrade for Backtest {
         let symbol_rule = self.symbol_rule(symbol)?;
         let position = self.position(symbol)?;
 
-        let size = (symbol_rule.size_tick % size).to_safe();
+        let size = (size - (symbol_rule.size_tick % size)).to_safe();
         ensure!(
             size >= symbol_rule.size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -546,7 +546,7 @@ impl EngineTrade for Backtest {
         let symbol_rule = self.symbol_rule(symbol)?;
         let position = self.position(symbol)?;
 
-        let size = (symbol_rule.size_tick % size).to_safe();
+        let size = (size - (symbol_rule.size_tick % size)).to_safe();
         ensure!(
             size >= symbol_rule.size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -554,7 +554,7 @@ impl EngineTrade for Backtest {
             symbol_rule.size_min
         );
 
-        let price = (symbol_rule.price_tick % price).to_safe();
+        let price = (price - (symbol_rule.price_tick % price)).to_safe();
         ensure!(
             price >= symbol_rule.price_min,
             "最低价格限制: 价格({}),限制({})",
