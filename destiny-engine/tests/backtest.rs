@@ -13,21 +13,6 @@ impl Strategy for BacktestStrategy {
         engine.init_symbol("SOLUSDT")?;
         Ok(())
     }
-
-    async fn on_start(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        tracing::info!("on_start: {}", engine.now());
-        Ok(())
-    }
-
-    async fn on_stop(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        tracing::info!("on_stop: {}", engine.now());
-        Ok(())
-    }
-
-    async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        tracing::info!("on_tick: {}", engine.now());
-        Ok(())
-    }
 }
 
 #[tokio::test]
@@ -36,7 +21,7 @@ async fn test_backtest() -> Result<()> {
         return Ok(());
     }
 
-    LogConfigBuilder::default()
+    let log_collector = LogConfigBuilder::default()
         .save_file(false)
         .targets(vec!["backtest".to_string()])
         .build()?
@@ -49,5 +34,8 @@ async fn test_backtest() -> Result<()> {
         .build()?;
 
     Backtest::run(config, Arc::new(BacktestStrategy)).await?;
+
+    log_collector.done().await?;
+
     Ok(())
 }

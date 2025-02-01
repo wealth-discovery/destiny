@@ -3,7 +3,11 @@ use anyhow::Result;
 use derive_builder::Builder;
 use nu_ansi_term::Color;
 use std::{io::Write, path::PathBuf};
-use tokio::fs::create_dir_all;
+use tokio::{
+    fs::create_dir_all,
+    sync::mpsc::{unbounded_channel, UnboundedSender},
+    task::JoinHandle,
+};
 use tracing::{field::Visit, level_filters::LevelFilter, Level};
 use tracing_subscriber::{layer::SubscriberExt, Layer};
 
@@ -35,10 +39,15 @@ impl Visit for LogVisitor {
 struct LogLayer {
     show_std: bool,
     file_writer: Option<tracing_appender::non_blocking::NonBlocking>,
+    std_tx: UnboundedSender<Option<String>>,
 }
 
 impl LogLayer {
-    pub async fn new(show_std: bool, save_file: bool) -> Result<Self> {
+    pub async fn new(
+        show_std: bool,
+        save_file: bool,
+        std_tx: UnboundedSender<Option<String>>,
+    ) -> Result<Self> {
         let mut file_writer = None;
         if save_file {
             let dir = PathBuf::cache()?.join("logs");
@@ -52,6 +61,7 @@ impl LogLayer {
         Ok(Self {
             show_std,
             file_writer,
+            std_tx,
         })
     }
 }
@@ -103,8 +113,8 @@ where
         let msg = format!("[{topic}][{now}][{thread_id:02}][{target}:{line:04}]> {message}\n");
 
         if self.show_std {
-            std::io::stdout()
-                .write_all(
+            self.std_tx
+                .send(Some(
                     match level {
                         Level::TRACE => Color::DarkGray.paint(&msg),
                         Level::DEBUG => Color::Blue.paint(&msg),
@@ -112,9 +122,8 @@ where
                         Level::WARN => Color::Purple.paint(&msg),
                         Level::ERROR => Color::Red.paint(&msg),
                     }
-                    .to_string()
-                    .as_bytes(),
-                )
+                    .to_string(),
+                ))
                 .ok();
         }
 
@@ -125,22 +134,47 @@ where
     }
 }
 
+pub struct LogCollector {
+    tx: UnboundedSender<Option<String>>,
+    handle: JoinHandle<()>,
+}
+
+impl LogCollector {
+    fn new(tx: UnboundedSender<Option<String>>, handle: JoinHandle<()>) -> Self {
+        Self { tx, handle }
+    }
+    pub async fn done(self) -> Result<()> {
+        self.tx.send(None).ok();
+        self.handle.await?;
+        Ok(())
+    }
+}
+
 impl LogConfig {
     /// 初始化日志,将设置全局的日志配置.
     /// <br> 重复初始化会报错.
-    pub async fn init_log(self) -> Result<()> {
+    pub async fn init_log(self) -> Result<LogCollector> {
         let mut targets =
             tracing_subscriber::filter::Targets::new().with_target("destiny_", LevelFilter::TRACE);
         for target in self.targets {
             targets = targets.with_target(target, LevelFilter::TRACE);
         }
 
-        let layer = LogLayer::new(self.show_std, self.save_file).await?;
+        let (tx, mut rx) = unbounded_channel::<Option<String>>();
+
+        let handle = tokio::spawn(async move {
+            while let Some(Some(msg)) = rx.recv().await {
+                std::io::stdout().write_all(msg.as_bytes()).ok();
+            }
+        });
+        let log_collector = LogCollector::new(tx.clone(), handle);
+
+        let layer = LogLayer::new(self.show_std, self.save_file, tx).await?;
 
         let collector = tracing_subscriber::registry().with(targets).with(layer);
 
         tracing::subscriber::set_global_default(collector)?;
 
-        Ok(())
+        Ok(log_collector)
     }
 }

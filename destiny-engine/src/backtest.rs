@@ -1,13 +1,14 @@
 use crate::traits::*;
 use anyhow::{anyhow, ensure, Result};
 use async_trait::async_trait;
-use chrono::{DateTime, Duration, DurationRound, Utc};
+use chrono::{DateTime, Duration, DurationRound, Timelike, Utc};
 use derive_builder::Builder;
 use destiny_helpers::prelude::*;
 use destiny_types::prelude::*;
 use parking_lot::Mutex;
 use rayon::prelude::*;
 use std::sync::Arc;
+use tokio::time::Instant;
 
 /// 回测配置
 #[derive(Builder)]
@@ -808,15 +809,72 @@ impl Backtest {
         let mut begin = backtest.config.begin;
         let end = backtest.config.end;
 
+        let event_instant = Instant::now();
+
         while begin <= end {
             *backtest.trade_time.lock() = begin;
 
-            strategy.on_tick(backtest.clone()).await?;
+            // 市场行情变化事件
+            // 每日事件
+            if begin.hour() == 0 && begin.minute() == 0 {
+                let event_instant = Instant::now();
+                if let Err(err) = strategy.on_daily(backtest.clone()).await {
+                    tracing::error!("{} 每日事件执行失败: {}", begin.str_ymd_hm(), err);
+                } else {
+                    tracing::debug!(
+                        "{} 每日事件执行耗时: {:?}",
+                        begin.str_ymd_hm(),
+                        event_instant.elapsed()
+                    );
+                }
+            }
+            // 每小时事件
+            if begin.minute() == 0 {
+                let event_instant = Instant::now();
+                if let Err(err) = strategy.on_hourly(backtest.clone()).await {
+                    tracing::error!("{} 每小时事件执行失败: {}", begin.str_ymd_hm(), err);
+                } else {
+                    tracing::debug!(
+                        "{} 每小时事件执行耗时: {:?}",
+                        begin.str_ymd_hm(),
+                        event_instant.elapsed()
+                    );
+                }
+            }
+            // 每分钟事件
+            {
+                let event_instant = Instant::now();
+                if let Err(err) = strategy.on_minutely(backtest.clone()).await {
+                    tracing::error!("{} 每分钟事件执行失败: {}", begin.str_ymd_hm(), err);
+                } else {
+                    tracing::debug!(
+                        "{} 每分钟事件执行耗时: {:?}",
+                        begin.str_ymd_hm(),
+                        event_instant.elapsed()
+                    );
+                }
+            }
+            // Tick事件
+            {
+                let event_instant = Instant::now();
+                if let Err(err) = strategy.on_tick(backtest.clone()).await {
+                    tracing::error!("{} Tick事件执行失败: {}", begin.str_ymd_hm(), err);
+                } else {
+                    tracing::debug!(
+                        "{} Tick事件执行耗时: {:?}",
+                        begin.str_ymd_hm(),
+                        event_instant.elapsed()
+                    );
+                }
+            }
 
             begin += Duration::minutes(1);
         }
 
+        tracing::debug!("回测耗时: {:?}", event_instant.elapsed());
+
         strategy.on_stop(backtest.clone()).await?;
+
         Ok(())
     }
 }
