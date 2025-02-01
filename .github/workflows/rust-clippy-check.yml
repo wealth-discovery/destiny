@@ -14,5 +14,16 @@ jobs:
         uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
+      - name: Cache cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-rust-clippy-check-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-rust-clippy-check-${{ hashFiles('**/Cargo.lock') }}
       - name: rust-clippy-check
         run: cargo +nightly clippy --all-targets --all-features --tests -- -Dwarnings
