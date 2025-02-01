@@ -1,22 +1,37 @@
 use destiny_engine::prelude::*;
 
-struct BacktestStrategy;
+struct BacktestStrategy {
+    symbol: String,
+    is_buy: Arc<Mutex<bool>>,
+}
+
+impl BacktestStrategy {
+    pub fn new() -> Self {
+        Self {
+            symbol: "ETHUSDT".to_string(),
+            is_buy: Arc::new(Mutex::new(false)),
+        }
+    }
+}
 
 #[async_trait]
 #[allow(unused_variables)]
 impl Strategy for BacktestStrategy {
     async fn on_init(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        tracing::info!("on_init: {}", engine.time());
-        // engine.init_symbol("TRUMPUSDT")?;
-        engine.symbol_init("ETHUSDT")?;
-        // engine.init_symbol("BTCUSDT")?;
-        // engine.init_symbol("SOLUSDT")?;
+        tracing::info!("{} on_init", engine.time());
+        engine.symbol_init(&self.symbol)?;
         Ok(())
     }
 
     async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        engine.long_market_open("ETHUSDT", 1.).await?;
-        info!("{}", engine.cash());
+        if !*self.is_buy.lock() {
+            engine.long_market_open(&self.symbol, 1.).await?;
+            *self.is_buy.lock() = true;
+        }
+        let time = engine.time().str_ymd_hm();
+        let price_mark = engine.price_mark(&self.symbol);
+        let cash_available = engine.cash_available();
+        info!("{time} 标记价({price_mark:.2}),可用资金({cash_available:.2})");
         Ok(())
     }
 }
@@ -36,11 +51,11 @@ async fn test_backtest() -> Result<()> {
         .await?;
 
     let config = BacktestConfigBuilder::default()
-        .begin("2023".to_date()?)
+        .begin("2020".to_date()?)
         .end("2024".to_date()?)
         .build()?;
 
-    Backtest::run(config, Arc::new(BacktestStrategy)).await?;
+    Backtest::run(config, Arc::new(BacktestStrategy::new())).await?;
 
     log_collector.done().await?;
 
