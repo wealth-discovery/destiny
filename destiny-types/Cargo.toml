@@ -9,6 +9,8 @@ repository.workspace = true
 readme.workspace = true
 
 [dependencies]
+destiny-helpers = { workspace = true }
 chrono = { workspace = true }
 serde = { workspace = true }
 strum = { workspace = true }
+rayon = { workspace = true }
