@@ -140,11 +140,12 @@ impl EngineTrade for Backtest {
             cash.available
         );
 
-        self.account.lock().cash.available -= margin;
-        self.account.lock().cash.frozen += margin;
+        let mut account = self.account.lock();
+        account.cash.available = (account.cash.available - margin).to_safe();
+        account.cash.frozen = (account.cash.frozen + margin).to_safe();
 
         let order_id = String::gen_id();
-        self.account.lock().orders.insert(
+        account.orders.insert(
             order_id.clone(),
             Order {
                 id: order_id.clone(),
@@ -212,11 +213,12 @@ impl EngineTrade for Backtest {
             cash.available
         );
 
-        self.account.lock().cash.available -= margin;
-        self.account.lock().cash.frozen += margin;
+        let mut account = self.account.lock();
+        account.cash.available = (account.cash.available - margin).to_safe();
+        account.cash.frozen = (account.cash.frozen + margin).to_safe();
 
         let order_id = String::gen_id();
-        self.account.lock().orders.insert(
+        account.orders.insert(
             order_id.clone(),
             Order {
                 id: order_id.clone(),
@@ -254,23 +256,13 @@ impl EngineTrade for Backtest {
             size
         );
 
-        self.account
-            .lock()
-            .positions
-            .get_mut(symbol)
-            .unwrap()
-            .long
-            .available -= size;
-        self.account
-            .lock()
-            .positions
-            .get_mut(symbol)
-            .unwrap()
-            .long
-            .frozen += size;
+        let mut account = self.account.lock();
+        let account_position = account.positions.get_mut(symbol).unwrap();
+        account_position.long.available = (account_position.long.available - size).to_safe();
+        account_position.long.frozen = (account_position.long.frozen + size).to_safe();
 
         let order_id = String::gen_id();
-        self.account.lock().orders.insert(
+        account.orders.insert(
             order_id.clone(),
             Order {
                 id: order_id.clone(),
@@ -322,23 +314,13 @@ impl EngineTrade for Backtest {
             size
         );
 
-        self.account
-            .lock()
-            .positions
-            .get_mut(symbol)
-            .unwrap()
-            .long
-            .available -= size;
-        self.account
-            .lock()
-            .positions
-            .get_mut(symbol)
-            .unwrap()
-            .long
-            .frozen += size;
+        let mut account = self.account.lock();
+        let account_position = account.positions.get_mut(symbol).unwrap();
+        account_position.long.available = (account_position.long.available - size).to_safe();
+        account_position.long.frozen = (account_position.long.frozen + size).to_safe();
 
         let order_id = String::gen_id();
-        self.account.lock().orders.insert(
+        account.orders.insert(
             order_id.clone(),
             Order {
                 id: order_id.clone(),
@@ -393,11 +375,12 @@ impl EngineTrade for Backtest {
             cash.available
         );
 
-        self.account.lock().cash.available -= margin;
-        self.account.lock().cash.frozen += margin;
+        let mut account = self.account.lock();
+        account.cash.available = (account.cash.available - margin).to_safe();
+        account.cash.frozen = (account.cash.frozen + margin).to_safe();
 
         let order_id = String::gen_id();
-        self.account.lock().orders.insert(
+        account.orders.insert(
             order_id.clone(),
             Order {
                 id: order_id.clone(),
@@ -465,11 +448,12 @@ impl EngineTrade for Backtest {
             cash.available
         );
 
-        self.account.lock().cash.available -= margin;
-        self.account.lock().cash.frozen += margin;
+        let mut account = self.account.lock();
+        account.cash.available = (account.cash.available - margin).to_safe();
+        account.cash.frozen = (account.cash.frozen + margin).to_safe();
 
         let order_id = String::gen_id();
-        self.account.lock().orders.insert(
+        account.orders.insert(
             order_id.clone(),
             Order {
                 id: order_id.clone(),
@@ -507,23 +491,13 @@ impl EngineTrade for Backtest {
             size
         );
 
-        self.account
-            .lock()
-            .positions
-            .get_mut(symbol)
-            .unwrap()
-            .short
-            .available -= size;
-        self.account
-            .lock()
-            .positions
-            .get_mut(symbol)
-            .unwrap()
-            .short
-            .frozen += size;
+        let mut account = self.account.lock();
+        let account_position = account.positions.get_mut(symbol).unwrap();
+        account_position.short.available = (account_position.short.available - size).to_safe();
+        account_position.short.frozen = (account_position.short.frozen + size).to_safe();
 
         let order_id = String::gen_id();
-        self.account.lock().orders.insert(
+        account.orders.insert(
             order_id.clone(),
             Order {
                 id: order_id.clone(),
@@ -575,23 +549,13 @@ impl EngineTrade for Backtest {
             size
         );
 
-        self.account
-            .lock()
-            .positions
-            .get_mut(symbol)
-            .unwrap()
-            .short
-            .available -= size;
-        self.account
-            .lock()
-            .positions
-            .get_mut(symbol)
-            .unwrap()
-            .short
-            .frozen += size;
+        let mut account = self.account.lock();
+        let account_position = account.positions.get_mut(symbol).unwrap();
+        account_position.short.available = (account_position.short.available - size).to_safe();
+        account_position.short.frozen = (account_position.short.frozen + size).to_safe();
 
         let order_id = String::gen_id();
-        self.account.lock().orders.insert(
+        account.orders.insert(
             order_id.clone(),
             Order {
                 id: order_id.clone(),
