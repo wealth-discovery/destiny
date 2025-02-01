@@ -5,13 +5,14 @@ on:
     branches:
       - main
 
-env:
-  RUSTFLAGS: "-Dwarnings"
-
 jobs:
   rust-clippy-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
       - name: rust-clippy-check
-        run: cargo clippy --all-targets --all-features --tests
+        run: cargo +nightly clippy --all-targets --all-features --tests -- -Dwarnings
