@@ -5,7 +5,7 @@ async fn test_sync_history_data() -> Result<()> {
     if bool::has_github_action() {
         return Ok(());
     }
-    LogConfigBuilder::default()
+    let log_collector = LogConfigBuilder::default()
         .save_file(false)
         .targets(vec!["history_data".to_string()])
         .build()?
@@ -26,6 +26,8 @@ async fn test_sync_history_data() -> Result<()> {
             SyncHistoryData::sync_symbol("DOGEUSDT", "202001".to_date()?, "202412".to_date()?).await
         }),
     );
+
+    log_collector.done().await?;
 
     Ok(())
 }

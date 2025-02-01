@@ -3,7 +3,7 @@ use destiny_helpers::prelude::*;
 
 #[tokio::test]
 async fn test_log() -> Result<()> {
-    LogConfigBuilder::default()
+    let log_collector = LogConfigBuilder::default()
         .save_file(false)
         .targets(vec!["log".to_string()])
         .build()?
@@ -15,6 +15,8 @@ async fn test_log() -> Result<()> {
     tracing::info!("info");
     tracing::warn!("warn");
     tracing::error!("error");
+
+    log_collector.done().await?;
 
     Ok(())
 }
