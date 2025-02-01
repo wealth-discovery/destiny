@@ -750,6 +750,129 @@ impl EngineMarket for Backtest {
     }
 }
 
+struct SymbolHistoryData_ {
+    funding_rate: HistoryDataStream<FundingRateHistory>,
+    klines: HistoryDataStream<Kline>,
+    index_price_klines: HistoryDataStream<Kline>,
+    mark_price_klines: HistoryDataStream<Kline>,
+}
+
+struct SymbolHistoryData(HashMap<String, SymbolHistoryData_>);
+
+impl SymbolHistoryData {
+    pub fn new(symbols: &[String], begin: DateTime<Utc>, end: DateTime<Utc>) -> Self {
+        let mut result = HashMap::new();
+        for symbol in symbols {
+            let history_data = SymbolHistoryData_ {
+                funding_rate: HistoryDataStream::new(
+                    symbol.to_owned(),
+                    HistoryDataStreamType::FundingRate,
+                    begin,
+                    end,
+                ),
+                klines: HistoryDataStream::new(
+                    symbol.to_owned(),
+                    HistoryDataStreamType::Klines,
+                    begin,
+                    end,
+                ),
+                index_price_klines: HistoryDataStream::new(
+                    symbol.to_owned(),
+                    HistoryDataStreamType::IndexPriceKlines,
+                    begin,
+                    end,
+                ),
+                mark_price_klines: HistoryDataStream::new(
+                    symbol.to_owned(),
+                    HistoryDataStreamType::MarkPriceKlines,
+                    begin,
+                    end,
+                ),
+            };
+            result.insert(symbol.to_owned(), history_data);
+        }
+        Self(result)
+    }
+
+    async fn flush_market_settlement_price(
+        &mut self,
+        backtest: &Backtest,
+        symbol: &str,
+        date: DateTime<Utc>,
+    ) -> Result<()> {
+        let history_data = self.0.get_mut(symbol).unwrap();
+        if let Some(funding_rate) = history_data.funding_rate.take(date).await? {
+            let mut account = backtest.account.lock();
+            let account_symbol = account.symbols.get_mut(symbol).unwrap();
+            account_symbol.market.settlement_price = funding_rate.rate;
+            account_symbol.market.next_settlement_time = date + Duration::hours(8);
+        }
+        Ok(())
+    }
+
+    async fn flush_market_last_price(
+        &mut self,
+        backtest: &Backtest,
+        symbol: &str,
+        date: DateTime<Utc>,
+    ) -> Result<()> {
+        let history_data = self.0.get_mut(symbol).unwrap();
+        if let Some(kline) = history_data.klines.take(date).await? {
+            let mut account = backtest.account.lock();
+            let account_symbol = account.symbols.get_mut(symbol).unwrap();
+            account_symbol.market.last_price = kline.open;
+        }
+        Ok(())
+    }
+
+    async fn flush_market_index_price(
+        &mut self,
+        backtest: &Backtest,
+        symbol: &str,
+        date: DateTime<Utc>,
+    ) -> Result<()> {
+        let history_data = self.0.get_mut(symbol).unwrap();
+        if let Some(kline) = history_data.index_price_klines.take(date).await? {
+            let mut account = backtest.account.lock();
+            let account_symbol = account.symbols.get_mut(symbol).unwrap();
+            account_symbol.market.index_price = kline.open;
+        }
+        Ok(())
+    }
+
+    async fn flush_market_mark_price(
+        &mut self,
+        backtest: &Backtest,
+        symbol: &str,
+        date: DateTime<Utc>,
+    ) -> Result<()> {
+        let history_data = self.0.get_mut(symbol).unwrap();
+        if let Some(kline) = history_data.mark_price_klines.take(date).await? {
+            let mut account = backtest.account.lock();
+            let account_symbol = account.symbols.get_mut(symbol).unwrap();
+            account_symbol.market.mark_price = kline.open;
+        }
+        Ok(())
+    }
+
+    pub async fn flush_market(
+        &mut self,
+        backtest: &Backtest,
+        symbols: &[String],
+        date: DateTime<Utc>,
+    ) -> Result<()> {
+        for symbol in symbols {
+            self.flush_market_settlement_price(backtest, symbol, date)
+                .await?;
+            self.flush_market_last_price(backtest, symbol, date).await?;
+            self.flush_market_index_price(backtest, symbol, date)
+                .await?;
+            self.flush_market_mark_price(backtest, symbol, date).await?;
+        }
+        Ok(())
+    }
+}
+
 impl Backtest {
     fn new(mut config: BacktestConfig) -> Result<Arc<Backtest>> {
         config.begin = config.begin.truncate_minute()?;
@@ -809,42 +932,7 @@ impl Backtest {
         let mut begin = backtest.config.begin;
         let end = backtest.config.end;
 
-        struct SymbolHistoryData {
-            funding_rate: HistoryDataStream<FundingRateHistory>,
-            klines: HistoryDataStream<Kline>,
-            index_price_klines: HistoryDataStream<Kline>,
-            mark_price_klines: HistoryDataStream<Kline>,
-        }
-        let mut symbol_history_data = HashMap::new();
-        for symbol in symbols.iter() {
-            let history_data = SymbolHistoryData {
-                funding_rate: HistoryDataStream::new(
-                    symbol.to_owned(),
-                    HistoryDataStreamType::FundingRate,
-                    begin,
-                    end,
-                ),
-                klines: HistoryDataStream::new(
-                    symbol.to_owned(),
-                    HistoryDataStreamType::Klines,
-                    begin,
-                    end,
-                ),
-                index_price_klines: HistoryDataStream::new(
-                    symbol.to_owned(),
-                    HistoryDataStreamType::IndexPriceKlines,
-                    begin,
-                    end,
-                ),
-                mark_price_klines: HistoryDataStream::new(
-                    symbol.to_owned(),
-                    HistoryDataStreamType::MarkPriceKlines,
-                    begin,
-                    end,
-                ),
-            };
-            symbol_history_data.insert(symbol.to_owned(), history_data);
-        }
+        let mut symbol_history_data = SymbolHistoryData::new(&symbols, begin, end);
 
         let backtest_instant = Instant::now();
 
@@ -852,34 +940,9 @@ impl Backtest {
             *backtest.trade_time.lock() = begin;
 
             // 更新市场行情
-            for symbol in symbols.iter() {
-                let history_data = symbol_history_data.get_mut(symbol).unwrap();
-                // 资金费率
-                if let Some(funding_rate) = history_data.funding_rate.take(begin).await? {
-                    let mut account = backtest.account.lock();
-                    let account_symbol = account.symbols.get_mut(symbol).unwrap();
-                    account_symbol.market.settlement_price = funding_rate.rate;
-                    account_symbol.market.next_settlement_time = begin + Duration::hours(8);
-                }
-                // K线
-                if let Some(kline) = history_data.klines.take(begin).await? {
-                    let mut account = backtest.account.lock();
-                    let account_symbol = account.symbols.get_mut(symbol).unwrap();
-                    account_symbol.market.last_price = kline.open;
-                }
-                // 指数价格
-                if let Some(kline) = history_data.index_price_klines.take(begin).await? {
-                    let mut account = backtest.account.lock();
-                    let account_symbol = account.symbols.get_mut(symbol).unwrap();
-                    account_symbol.market.index_price = kline.open;
-                }
-                // 标记价格
-                if let Some(kline) = history_data.mark_price_klines.take(begin).await? {
-                    let mut account = backtest.account.lock();
-                    let account_symbol = account.symbols.get_mut(symbol).unwrap();
-                    account_symbol.market.mark_price = kline.open;
-                }
-            }
+            symbol_history_data
+                .flush_market(&backtest, &symbols, begin)
+                .await?;
 
             // 每日事件
             if begin.hour() == 0 && begin.minute() == 0 {
