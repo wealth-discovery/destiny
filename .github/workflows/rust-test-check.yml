@@ -21,7 +21,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-rust-test-check
+          key: ${{ runner.os }}-rust-test-check-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-rust-test-check-${{ hashFiles('**/Cargo.lock') }}
       - name: rust-test-check
         run: cargo +nightly test
