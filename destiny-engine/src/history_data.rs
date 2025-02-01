@@ -707,6 +707,7 @@ where
                 for item in data {
                     if item.datetime() >= begin && item.datetime() <= end {
                         tx.send(item).await.expect("发送数据失败");
+                        tokio::task::yield_now().await;
                     }
                 }
 
