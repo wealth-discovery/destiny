@@ -20,13 +20,14 @@ impl Strategy for BacktestStrategy {
     }
 }
 
-#[tokio::test(flavor = "multi_thread")]
+#[tokio::test]
 async fn test_backtest() -> Result<()> {
     if bool::has_github_action() {
         return Ok(());
     }
 
     let log_collector = LogConfigBuilder::default()
+        .level(LogLevel::DEBUG)
         .save_file(false)
         .targets(vec!["backtest".to_string()])
         .build()?

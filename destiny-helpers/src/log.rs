@@ -11,6 +11,8 @@ use tokio::{
 use tracing::{field::Visit, level_filters::LevelFilter, Level};
 use tracing_subscriber::{layer::SubscriberExt, Layer};
 
+pub type LogLevel = LevelFilter;
+
 /// 日志配置
 #[derive(Builder)]
 #[builder(setter(into))]
@@ -24,6 +26,9 @@ pub struct LogConfig {
     /// 可显示的包名,默认显示[`destiny_`]开头的包
     #[builder(default = vec![])]
     pub targets: Vec<String>,
+    /// 日志级别
+    #[builder(default = LogLevel::INFO)]
+    pub level: LogLevel,
 }
 
 struct LogVisitor(Option<String>);
@@ -37,6 +42,7 @@ impl Visit for LogVisitor {
 }
 
 struct LogLayer {
+    level: LogLevel,
     show_std: bool,
     file_writer: Option<tracing_appender::non_blocking::NonBlocking>,
     std_tx: UnboundedSender<Option<String>>,
@@ -44,12 +50,13 @@ struct LogLayer {
 
 impl LogLayer {
     pub async fn new(
+        level: LogLevel,
         show_std: bool,
         save_file: bool,
         std_tx: UnboundedSender<Option<String>>,
     ) -> Result<Self> {
         let mut file_writer = None;
-        if save_file {
+        if level != LogLevel::OFF && save_file {
             let dir = PathBuf::cache()?.join("logs");
             create_dir_all(&dir).await?;
             let appender = tracing_appender::rolling::daily(dir, "log");
@@ -59,6 +66,7 @@ impl LogLayer {
         }
 
         Ok(Self {
+            level,
             show_std,
             file_writer,
             std_tx,
@@ -75,7 +83,17 @@ where
         event: &tracing::Event<'_>,
         _ctx: tracing_subscriber::layer::Context<'_, S>,
     ) {
+        if self.level == LogLevel::OFF {
+            return;
+        }
+
         if !self.show_std && self.file_writer.is_none() {
+            return;
+        }
+
+        let level = *event.metadata().level();
+
+        if self.level < level {
             return;
         }
 
@@ -89,8 +107,6 @@ where
             .with_timezone(&FIXED_OFFSET)
             .format("%Y%m%d_%H%M%S_%6f")
             .to_string();
-
-        let level = *event.metadata().level();
 
         let topic = match level {
             Level::TRACE => "轨迹",
@@ -169,7 +185,7 @@ impl LogConfig {
         });
         let log_collector = LogCollector::new(tx.clone(), handle);
 
-        let layer = LogLayer::new(self.show_std, self.save_file, tx).await?;
+        let layer = LogLayer::new(self.level, self.show_std, self.save_file, tx).await?;
 
         let collector = tracing_subscriber::registry().with(targets).with(layer);
 
