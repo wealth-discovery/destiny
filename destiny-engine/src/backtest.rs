@@ -103,8 +103,7 @@ impl EngineAccount for Backtest {
             .lock()
             .positions
             .get(symbol)
-            .map(|position| position.orders.get(id))
-            .flatten()
+            .and_then(|position| position.orders.get(id))
             .cloned()
     }
     fn orders(&self, symbol: &str) -> Vec<Order> {
@@ -500,12 +499,12 @@ impl EngineExchange for Backtest {
             symbol
         );
 
-        let price_mark = self.price_mark(&symbol);
-        let size_min = self.rule_size_min(&symbol);
-        let size_max = self.rule_size_max(&symbol);
-        let size_tick = self.rule_size_tick(&symbol);
-        let amount_min = self.rule_amount_min(&symbol);
-        let leverage = self.leverage(&symbol) as f64;
+        let price_mark = self.price_mark(symbol);
+        let size_min = self.rule_size_min(symbol);
+        let size_max = self.rule_size_max(symbol);
+        let size_tick = self.rule_size_tick(symbol);
+        let amount_min = self.rule_amount_min(symbol);
+        let leverage = self.leverage(symbol) as f64;
         let cash_available = self.cash_available();
 
         let size = (size - (size_tick % size)).to_safe();
@@ -571,14 +570,14 @@ impl EngineExchange for Backtest {
             symbol
         );
 
-        let price_min = self.rule_price_min(&symbol);
-        let price_max = self.rule_price_max(&symbol);
-        let price_tick = self.rule_price_tick(&symbol);
-        let size_min = self.rule_size_min(&symbol);
-        let size_max = self.rule_size_max(&symbol);
-        let size_tick = self.rule_size_tick(&symbol);
-        let amount_min = self.rule_amount_min(&symbol);
-        let leverage = self.leverage(&symbol) as f64;
+        let price_min = self.rule_price_min(symbol);
+        let price_max = self.rule_price_max(symbol);
+        let price_tick = self.rule_price_tick(symbol);
+        let size_min = self.rule_size_min(symbol);
+        let size_max = self.rule_size_max(symbol);
+        let size_tick = self.rule_size_tick(symbol);
+        let amount_min = self.rule_amount_min(symbol);
+        let leverage = self.leverage(symbol) as f64;
         let cash_available = self.cash_available();
 
         let size = (size - (size_tick % size)).to_safe();
@@ -658,9 +657,9 @@ impl EngineExchange for Backtest {
             symbol
         );
 
-        let size_min = self.rule_size_min(&symbol);
-        let size_tick = self.rule_size_tick(&symbol);
-        let long_size_available = self.long_size_available(&symbol);
+        let size_min = self.rule_size_min(symbol);
+        let size_tick = self.rule_size_tick(symbol);
+        let long_size_available = self.long_size_available(symbol);
 
         let size = (size - (size_tick % size)).to_safe();
         ensure!(
@@ -710,12 +709,12 @@ impl EngineExchange for Backtest {
             symbol
         );
 
-        let price_min = self.rule_price_min(&symbol);
-        let price_max = self.rule_price_max(&symbol);
-        let price_tick = self.rule_price_tick(&symbol);
-        let size_min = self.rule_size_min(&symbol);
-        let size_tick = self.rule_size_tick(&symbol);
-        let long_size_available = self.long_size_available(&symbol);
+        let price_min = self.rule_price_min(symbol);
+        let price_max = self.rule_price_max(symbol);
+        let price_tick = self.rule_price_tick(symbol);
+        let size_min = self.rule_size_min(symbol);
+        let size_tick = self.rule_size_tick(symbol);
+        let long_size_available = self.long_size_available(symbol);
 
         let size = (size - (size_tick % size)).to_safe();
         ensure!(
@@ -779,12 +778,12 @@ impl EngineExchange for Backtest {
             symbol
         );
 
-        let price_mark = self.price_mark(&symbol);
-        let size_min = self.rule_size_min(&symbol);
-        let size_max = self.rule_size_max(&symbol);
-        let size_tick = self.rule_size_tick(&symbol);
-        let amount_min = self.rule_amount_min(&symbol);
-        let leverage = self.leverage(&symbol) as f64;
+        let price_mark = self.price_mark(symbol);
+        let size_min = self.rule_size_min(symbol);
+        let size_max = self.rule_size_max(symbol);
+        let size_tick = self.rule_size_tick(symbol);
+        let amount_min = self.rule_amount_min(symbol);
+        let leverage = self.leverage(symbol) as f64;
         let cash_available = self.cash_available();
 
         let size = (size - (size_tick % size)).to_safe();
@@ -850,14 +849,14 @@ impl EngineExchange for Backtest {
             symbol
         );
 
-        let price_min = self.rule_price_min(&symbol);
-        let price_max = self.rule_price_max(&symbol);
-        let price_tick = self.rule_price_tick(&symbol);
-        let size_min = self.rule_size_min(&symbol);
-        let size_max = self.rule_size_max(&symbol);
-        let size_tick = self.rule_size_tick(&symbol);
-        let amount_min = self.rule_amount_min(&symbol);
-        let leverage = self.leverage(&symbol) as f64;
+        let price_min = self.rule_price_min(symbol);
+        let price_max = self.rule_price_max(symbol);
+        let price_tick = self.rule_price_tick(symbol);
+        let size_min = self.rule_size_min(symbol);
+        let size_max = self.rule_size_max(symbol);
+        let size_tick = self.rule_size_tick(symbol);
+        let amount_min = self.rule_amount_min(symbol);
+        let leverage = self.leverage(symbol) as f64;
         let cash_available = self.cash_available();
 
         let size = (size - (size_tick % size)).to_safe();
@@ -937,9 +936,9 @@ impl EngineExchange for Backtest {
             symbol
         );
 
-        let size_tick = self.rule_size_tick(&symbol);
-        let size_min = self.rule_size_min(&symbol);
-        let short_size_available = self.short_size_available(&symbol);
+        let size_tick = self.rule_size_tick(symbol);
+        let size_min = self.rule_size_min(symbol);
+        let short_size_available = self.short_size_available(symbol);
 
         let size = (size - (size_tick % size)).to_safe();
         ensure!(
@@ -989,12 +988,12 @@ impl EngineExchange for Backtest {
             symbol
         );
 
-        let size_tick = self.rule_size_tick(&symbol);
-        let price_min = self.rule_price_min(&symbol);
-        let price_max = self.rule_price_max(&symbol);
-        let price_tick = self.rule_price_tick(&symbol);
-        let size_min = self.rule_size_min(&symbol);
-        let short_size_available = self.short_size_available(&symbol);
+        let size_tick = self.rule_size_tick(symbol);
+        let price_min = self.rule_price_min(symbol);
+        let price_max = self.rule_price_max(symbol);
+        let price_tick = self.rule_price_tick(symbol);
+        let size_min = self.rule_size_min(symbol);
+        let short_size_available = self.short_size_available(symbol);
 
         let size = (size - (size_tick % size)).to_safe();
         ensure!(
