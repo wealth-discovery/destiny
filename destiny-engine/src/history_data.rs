@@ -515,7 +515,10 @@ impl HistoryData {
     where
         D: DecodeCsvRecord,
     {
+        tracing::trace!("加载历史数据: {}", path.display());
+
         if !path.exists() {
+            tracing::trace!("文件不存在: {}", path.display());
             return Ok(vec![]);
         }
 
@@ -528,6 +531,8 @@ impl HistoryData {
             let record = record?;
             result.push(D::decode(&record)?);
         }
+
+        tracing::trace!("加载完成: 数量大小({})", result.len());
 
         Ok(result)
     }

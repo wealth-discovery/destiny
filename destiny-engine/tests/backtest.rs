@@ -9,13 +9,17 @@ impl Strategy for BacktestStrategy {
         tracing::info!("on_init: {}", engine.now());
         // engine.init_symbol("TRUMPUSDT")?;
         engine.init_symbol("ETHUSDT")?;
-        engine.init_symbol("BTCUSDT")?;
-        engine.init_symbol("SOLUSDT")?;
+        // engine.init_symbol("BTCUSDT")?;
+        // engine.init_symbol("SOLUSDT")?;
+        Ok(())
+    }
+
+    async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread")]
 async fn test_backtest() -> Result<()> {
     if bool::has_github_action() {
         return Ok(());
