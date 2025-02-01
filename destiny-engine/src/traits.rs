@@ -4,121 +4,75 @@ use chrono::{DateTime, Utc};
 use destiny_types::prelude::*;
 use std::sync::Arc;
 
-pub trait Engine: EngineInit + EngineTrade + EngineAccount + EngineMarket + Send + Sync {}
-
-/// 引擎初始化
-pub trait EngineInit: Send + Sync {
-    /// 初始化交易对
-    /// <br> 重复初始化会报错.
-    fn init_symbol(&self, symbol: &str) -> Result<()>;
+pub trait Engine: EngineInit + EngineAccount + EngineMarket + EngineExchange + Send + Sync {
+    fn time(&self) -> DateTime<Utc>;
+    fn stop(&self);
 }
 
-/// 引擎交易
-#[async_trait]
-pub trait EngineTrade: Send + Sync {
-    /// 获取当前交易时间
-    fn now(&self) -> DateTime<Utc>;
-    /// 市价开多
-    /// <br> [`symbol`]: 交易对
-    /// <br> [`size`]: 数量
-    /// <br> 返回订单ID
-    async fn open_market_long(&self, symbol: &str, size: f64) -> Result<String>;
-    /// 限价开多
-    /// <br> [`symbol`]: 交易对
-    /// <br> [`size`]: 数量
-    /// <br> [`price`]: 开仓价格
-    /// <br> 返回订单ID
-    async fn open_limit_long(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
-    /// 市价平多
-    /// <br> [`symbol`]: 交易对
-    /// <br> [`size`]: 数量
-    /// <br> 返回订单ID
-    async fn close_market_long(&self, symbol: &str, size: f64) -> Result<String>;
-    /// 限价平多
-    /// <br> [`symbol`]: 交易对
-    /// <br> [`size`]: 数量
-    /// <br> [`price`]: 平仓价格
-    /// <br> 返回订单ID
-    async fn close_limit_long(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
-    /// 市价开空
-    /// <br> [`symbol`]: 交易对
-    /// <br> [`size`]: 数量
-    /// <br> 返回订单ID
-    async fn open_market_short(&self, symbol: &str, size: f64) -> Result<String>;
-    /// 限价开空
-    /// <br> [`symbol`]: 交易对
-    /// <br> [`size`]: 数量
-    /// <br> [`price`]: 开仓价格
-    /// <br> 返回订单ID
-    async fn open_limit_short(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
-    /// 市价平空
-    /// <br> [`symbol`]: 交易对
-    /// <br> [`size`]: 数量
-    /// <br> 返回订单ID
-    async fn close_market_short(&self, symbol: &str, size: f64) -> Result<String>;
-    /// 限价平空
-    /// <br> [`symbol`]: 交易对
-    /// <br> [`size`]: 数量
-    /// <br> [`price`]: 平仓价格
-    /// <br> 返回订单ID
-    async fn close_limit_short(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
-    /// 撤单
-    /// <br> [`id`]: 订单ID
-    async fn order_cancel(&self, id: &str) -> Result<()>;
-    /// 批量撤单
-    /// <br> [`ids`]: 订单ID列表
-    async fn orders_cancel(&self, ids: &[&str]) -> Result<()>;
-    /// 设置杠杆倍率
-    /// <br> [`symbol`]: 交易对
-    /// <br> [`leverage`]: 杠杆倍率
-    async fn leverage_set(&self, symbol: &str, leverage: u32) -> Result<()>;
-    /// 获取杠杆倍率
-    /// <br> [`symbol`]: 交易对
-    fn leverage(&self, symbol: &str) -> u32;
-    /// 获取订单
-    /// <br> [`id`]: 订单ID
-    fn order(&self, id: &str) -> Option<Order>;
-    /// 获取交易对订单
-    /// <br> [`symbol`]: 交易对
-    fn orders(&self, symbol: &str) -> Vec<Order>;
-    /// 获取多头订单
-    /// <br> [`symbol`]: 交易对
-    fn orders_long(&self, symbol: &str) -> Vec<Order>;
-    /// 获取多头开仓订单
-    /// <br> [`symbol`]: 交易对
-    fn orders_open_long(&self, symbol: &str) -> Vec<Order>;
-    /// 获取多头平仓订单
-    /// <br> [`symbol`]: 交易对
-    fn orders_close_long(&self, symbol: &str) -> Vec<Order>;
-    /// 获取空头订单
-    /// <br> [`symbol`]: 交易对
-    fn orders_short(&self, symbol: &str) -> Vec<Order>;
-    /// 获取空头开仓订单
-    /// <br> [`symbol`]: 交易对
-    fn orders_open_short(&self, symbol: &str) -> Vec<Order>;
-    /// 获取空头平仓订单
-    /// <br> [`symbol`]: 交易对
-    fn orders_close_short(&self, symbol: &str) -> Vec<Order>;
+pub trait EngineInit: Send + Sync {
+    fn symbol_init(&self, symbol: &str) -> Result<()>;
 }
 
 pub trait EngineAccount: Send + Sync {
-    /// 获取保证金
-    fn cash(&self) -> Cash;
-    /// 获取持仓
-    /// <br> [`symbol`]: 交易对
-    fn position(&self, symbol: &str) -> Result<SymbolPosition>;
+    fn order(&self, symbol: &str, id: &str) -> Option<Order>;
+    fn orders(&self, symbol: &str) -> Vec<Order>;
+    fn orders_long(&self, symbol: &str) -> Vec<Order>;
+    fn orders_long_open(&self, symbol: &str) -> Vec<Order>;
+    fn orders_long_close(&self, symbol: &str) -> Vec<Order>;
+    fn orders_short(&self, symbol: &str) -> Vec<Order>;
+    fn orders_short_open(&self, symbol: &str) -> Vec<Order>;
+    fn orders_short_close(&self, symbol: &str) -> Vec<Order>;
+    fn leverage(&self, symbol: &str) -> u32;
+    fn cash(&self) -> f64;
+    fn cash_available(&self) -> f64;
+    fn cash_frozen(&self) -> f64;
+    fn margin(&self) -> f64;
+    fn pnl(&self) -> f64;
+    fn long_price(&self, symbol: &str) -> f64;
+    fn long_size(&self, symbol: &str) -> f64;
+    fn long_size_available(&self, symbol: &str) -> f64;
+    fn long_size_frozen(&self, symbol: &str) -> f64;
+    fn long_margin(&self, symbol: &str) -> f64;
+    fn long_pnl(&self, symbol: &str) -> f64;
+    fn short_price(&self, symbol: &str) -> f64;
+    fn short_size(&self, symbol: &str) -> f64;
+    fn short_size_available(&self, symbol: &str) -> f64;
+    fn short_size_frozen(&self, symbol: &str) -> f64;
+    fn short_margin(&self, symbol: &str) -> f64;
+    fn short_pnl(&self, symbol: &str) -> f64;
+    fn symbol_pnl(&self, symbol: &str) -> f64;
+    fn symbol_margin(&self, symbol: &str) -> f64;
 }
 
 pub trait EngineMarket: Send + Sync {
-    /// 获取交易对
-    /// <br> [`symbol`]: 交易对
-    fn symbol(&self, symbol: &str) -> Result<Symbol>;
-    /// 获取交易规则
-    /// <br> [`symbol`]: 交易对
-    fn symbol_rule(&self, symbol: &str) -> Result<SymbolRule>;
-    /// 获取市场行情
-    /// <br> [`symbol`]: 交易对
-    fn symbol_market(&self, symbol: &str) -> Result<SymbolMarket>;
+    fn price_mark(&self, symbol: &str) -> f64;
+    fn price_last(&self, symbol: &str) -> f64;
+    fn price_index(&self, symbol: &str) -> f64;
+    fn price_settlement(&self, symbol: &str) -> f64;
+    fn time_settlement(&self, symbol: &str) -> DateTime<Utc>;
+    fn rule_price_min(&self, symbol: &str) -> f64;
+    fn rule_price_max(&self, symbol: &str) -> f64;
+    fn rule_price_tick(&self, symbol: &str) -> f64;
+    fn rule_size_min(&self, symbol: &str) -> f64;
+    fn rule_size_max(&self, symbol: &str) -> f64;
+    fn rule_size_tick(&self, symbol: &str) -> f64;
+    fn rule_amount_min(&self, symbol: &str) -> f64;
+    fn rule_order_max(&self, symbol: &str) -> i64;
+}
+
+#[async_trait]
+pub trait EngineExchange: Send + Sync {
+    async fn long_market_open(&self, symbol: &str, size: f64) -> Result<String>;
+    async fn long_limit_open(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
+    async fn long_market_close(&self, symbol: &str, size: f64) -> Result<String>;
+    async fn long_limit_close(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
+    async fn short_market_open(&self, symbol: &str, size: f64) -> Result<String>;
+    async fn short_limit_open(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
+    async fn short_market_close(&self, symbol: &str, size: f64) -> Result<String>;
+    async fn short_limit_close(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
+    async fn order_close(&self, symbol: &str, id: &str) -> Result<()>;
+    async fn order_cancel_many(&self, symbol: &str, ids: &[String]) -> Result<()>;
+    async fn leverage_set(&self, symbol: &str, leverage: u32) -> Result<()>;
 }
 
 /// 策略

@@ -509,6 +509,8 @@ name = "destiny-types"
 version = "1.0.0"
 dependencies = [
  "chrono",
+ "destiny-helpers",
+ "rayon",
  "serde",
  "strum",
 ]

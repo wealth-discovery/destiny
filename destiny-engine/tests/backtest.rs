@@ -6,18 +6,17 @@ struct BacktestStrategy;
 #[allow(unused_variables)]
 impl Strategy for BacktestStrategy {
     async fn on_init(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        tracing::info!("on_init: {}", engine.now());
+        tracing::info!("on_init: {}", engine.time());
         // engine.init_symbol("TRUMPUSDT")?;
-        engine.init_symbol("ETHUSDT")?;
+        engine.symbol_init("ETHUSDT")?;
         // engine.init_symbol("BTCUSDT")?;
         // engine.init_symbol("SOLUSDT")?;
         Ok(())
     }
 
     async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        let cash = engine.cash();
-        engine.open_market_long("ETHUSDT", 1.).await?;
-        info!("{}", cash.available);
+        engine.long_market_open("ETHUSDT", 1.).await?;
+        info!("{}", engine.cash());
         Ok(())
     }
 }

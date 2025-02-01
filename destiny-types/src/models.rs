@@ -9,6 +9,8 @@ use std::collections::HashMap;
 pub struct Symbol {
     /// 交易对
     pub symbol: String,
+    /// 是否可用
+    pub enable: bool,
     /// 规则
     pub rule: SymbolRule,
     /// 行情
@@ -18,8 +20,6 @@ pub struct Symbol {
 /// 交易对规则
 #[derive(Debug, Clone)]
 pub struct SymbolRule {
-    /// 是否可用
-    pub enable: bool,
     /// 最小价格
     pub price_min: f64,
     /// 最大价格
@@ -239,10 +239,16 @@ impl SymbolPosition {
             .to_safe()
     }
 
+    pub fn margin_long(&self) -> f64 {
+        self.long.margin(self.symbol.market.mark, self.leverage)
+    }
+
+    pub fn margin_short(&self) -> f64 {
+        self.short.margin(self.symbol.market.mark, self.leverage)
+    }
+
     pub fn margin_positions(&self) -> f64 {
-        (self.long.margin(self.symbol.market.mark, self.leverage)
-            + self.short.margin(self.symbol.market.mark, self.leverage))
-        .to_safe()
+        (self.margin_long() + self.margin_short()).to_safe()
     }
 
     pub fn margin(&self) -> f64 {
