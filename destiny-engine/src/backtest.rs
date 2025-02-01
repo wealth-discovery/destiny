@@ -1,4 +1,4 @@
-use crate::traits::*;
+use crate::{history_data::*, traits::*};
 use anyhow::{anyhow, ensure, Result};
 use async_trait::async_trait;
 use chrono::{DateTime, Duration, Timelike, Utc};
@@ -7,7 +7,7 @@ use destiny_helpers::prelude::*;
 use destiny_types::prelude::*;
 use parking_lot::Mutex;
 use rayon::prelude::*;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 use tokio::time::Instant;
 
 /// 回测配置
@@ -809,13 +809,77 @@ impl Backtest {
         let mut begin = backtest.config.begin;
         let end = backtest.config.end;
 
-        let event_instant = Instant::now();
+        struct SymbolHistoryData {
+            funding_rate: HistoryDataStream<FundingRateHistory>,
+            klines: HistoryDataStream<Kline>,
+            index_price_klines: HistoryDataStream<Kline>,
+            mark_price_klines: HistoryDataStream<Kline>,
+        }
+        let mut symbol_history_data = HashMap::new();
+        for symbol in symbols.iter() {
+            let history_data = SymbolHistoryData {
+                funding_rate: HistoryDataStream::new(
+                    symbol.to_owned(),
+                    HistoryDataStreamType::FundingRate,
+                    begin,
+                    end,
+                ),
+                klines: HistoryDataStream::new(
+                    symbol.to_owned(),
+                    HistoryDataStreamType::Klines,
+                    begin,
+                    end,
+                ),
+                index_price_klines: HistoryDataStream::new(
+                    symbol.to_owned(),
+                    HistoryDataStreamType::IndexPriceKlines,
+                    begin,
+                    end,
+                ),
+                mark_price_klines: HistoryDataStream::new(
+                    symbol.to_owned(),
+                    HistoryDataStreamType::MarkPriceKlines,
+                    begin,
+                    end,
+                ),
+            };
+            symbol_history_data.insert(symbol.to_owned(), history_data);
+        }
+
+        let backtest_instant = Instant::now();
 
         while begin <= end {
             *backtest.trade_time.lock() = begin;
 
-            // 更新行情
-            for symbol in symbols.iter() {}
+            // 更新市场行情
+            for symbol in symbols.iter() {
+                let history_data = symbol_history_data.get_mut(symbol).unwrap();
+                // 资金费率
+                if let Some(funding_rate) = history_data.funding_rate.take(begin).await? {
+                    let mut account = backtest.account.lock();
+                    let account_symbol = account.symbols.get_mut(symbol).unwrap();
+                    account_symbol.index.settlement_price = funding_rate.rate;
+                    account_symbol.index.next_settlement_time = begin + Duration::hours(8);
+                }
+                // K线
+                if let Some(kline) = history_data.klines.take(begin).await? {
+                    let mut account = backtest.account.lock();
+                    let account_symbol = account.symbols.get_mut(symbol).unwrap();
+                    account_symbol.index.last_price = kline.open;
+                }
+                // 指数价格
+                if let Some(kline) = history_data.index_price_klines.take(begin).await? {
+                    let mut account = backtest.account.lock();
+                    let account_symbol = account.symbols.get_mut(symbol).unwrap();
+                    account_symbol.index.index_price = kline.open;
+                }
+                // 标记价格
+                if let Some(kline) = history_data.mark_price_klines.take(begin).await? {
+                    let mut account = backtest.account.lock();
+                    let account_symbol = account.symbols.get_mut(symbol).unwrap();
+                    account_symbol.index.mark_price = kline.open;
+                }
+            }
 
             // 每日事件
             if begin.hour() == 0 && begin.minute() == 0 {
@@ -873,7 +937,7 @@ impl Backtest {
             begin += Duration::minutes(1);
         }
 
-        tracing::debug!("回测耗时: {:?}", event_instant.elapsed());
+        tracing::debug!("回测耗时: {:?}", backtest_instant.elapsed());
 
         strategy.on_stop(backtest.clone()).await?;
 

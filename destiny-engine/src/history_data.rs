@@ -483,14 +483,14 @@ impl SyncHistoryData {
                 .sync()
                 .await;
 
-                SyncHistoryMeta::premium_index_klines(
-                    symbol,
-                    interval,
-                    start.year() as i64,
-                    start.month() as i64,
-                )
-                .sync()
-                .await;
+                // SyncHistoryMeta::premium_index_klines(
+                //     symbol,
+                //     interval,
+                //     start.year() as i64,
+                //     start.month() as i64,
+                // )
+                // .sync()
+                // .await;
             }
             start = start + Months::new(1);
         }
