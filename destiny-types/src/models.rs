@@ -90,8 +90,8 @@ pub struct Symbol {
     pub symbol: String,
     /// 规则
     pub rule: SymbolRule,
-    /// 指数
-    pub index: SymbolIndex,
+    /// 行情
+    pub market: SymbolMarket,
 }
 
 /// 交易对规则
@@ -117,9 +117,9 @@ pub struct SymbolRule {
     pub order_max: i64,
 }
 
-/// 交易对指数
+/// 交易对行情
 #[derive(Debug, Clone)]
-pub struct SymbolIndex {
+pub struct SymbolMarket {
     /// 标记价格
     pub mark_price: f64,
     /// 指数价格

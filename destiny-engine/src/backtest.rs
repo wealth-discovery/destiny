@@ -63,7 +63,7 @@ impl EngineInit for Backtest {
                     amount_min: 1e-8,
                     order_max: 200,
                 },
-                index: SymbolIndex {
+                market: SymbolMarket {
                     mark_price: 0.,
                     index_price: 0.,
                     last_price: 0.,
@@ -83,7 +83,7 @@ impl EngineTrade for Backtest {
         *self.trade_time.lock()
     }
     async fn open_market_long(&self, symbol: &str, size: f64) -> Result<String> {
-        let symbol_index = self.symbol_index(symbol)?;
+        let symbol_market = self.symbol_market(symbol)?;
         let symbol_rule = self.symbol_rule(symbol)?;
         let cash = self.cash();
         let position = self.position(symbol)?;
@@ -102,7 +102,7 @@ impl EngineTrade for Backtest {
             symbol_rule.size_max,
         );
 
-        let amount = (size * symbol_index.mark_price).to_safe();
+        let amount = (size * symbol_market.mark_price).to_safe();
         ensure!(
             amount >= symbol_rule.amount_min,
             "最小金额限制: 金额({}),限制({})",
@@ -336,7 +336,7 @@ impl EngineTrade for Backtest {
         Ok(order_id)
     }
     async fn open_market_short(&self, symbol: &str, size: f64) -> Result<String> {
-        let symbol_index = self.symbol_index(symbol)?;
+        let symbol_market = self.symbol_market(symbol)?;
         let symbol_rule = self.symbol_rule(symbol)?;
         let cash = self.cash();
         let position = self.position(symbol)?;
@@ -355,7 +355,7 @@ impl EngineTrade for Backtest {
             symbol_rule.size_max,
         );
 
-        let amount = (size * symbol_index.mark_price).to_safe();
+        let amount = (size * symbol_market.mark_price).to_safe();
         ensure!(
             amount >= symbol_rule.amount_min,
             "最小金额限制: 金额({}),限制({})",
@@ -745,8 +745,8 @@ impl EngineMarket for Backtest {
     fn symbol_rule(&self, symbol: &str) -> Result<SymbolRule> {
         Ok(self.symbol(symbol)?.rule)
     }
-    fn symbol_index(&self, symbol: &str) -> Result<SymbolIndex> {
-        Ok(self.symbol(symbol)?.index)
+    fn symbol_market(&self, symbol: &str) -> Result<SymbolMarket> {
+        Ok(self.symbol(symbol)?.market)
     }
 }
 
@@ -858,26 +858,26 @@ impl Backtest {
                 if let Some(funding_rate) = history_data.funding_rate.take(begin).await? {
                     let mut account = backtest.account.lock();
                     let account_symbol = account.symbols.get_mut(symbol).unwrap();
-                    account_symbol.index.settlement_price = funding_rate.rate;
-                    account_symbol.index.next_settlement_time = begin + Duration::hours(8);
+                    account_symbol.market.settlement_price = funding_rate.rate;
+                    account_symbol.market.next_settlement_time = begin + Duration::hours(8);
                 }
                 // K线
                 if let Some(kline) = history_data.klines.take(begin).await? {
                     let mut account = backtest.account.lock();
                     let account_symbol = account.symbols.get_mut(symbol).unwrap();
-                    account_symbol.index.last_price = kline.open;
+                    account_symbol.market.last_price = kline.open;
                 }
                 // 指数价格
                 if let Some(kline) = history_data.index_price_klines.take(begin).await? {
                     let mut account = backtest.account.lock();
                     let account_symbol = account.symbols.get_mut(symbol).unwrap();
-                    account_symbol.index.index_price = kline.open;
+                    account_symbol.market.index_price = kline.open;
                 }
                 // 标记价格
                 if let Some(kline) = history_data.mark_price_klines.take(begin).await? {
                     let mut account = backtest.account.lock();
                     let account_symbol = account.symbols.get_mut(symbol).unwrap();
-                    account_symbol.index.mark_price = kline.open;
+                    account_symbol.market.mark_price = kline.open;
                 }
             }
 

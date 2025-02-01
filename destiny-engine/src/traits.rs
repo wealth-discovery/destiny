@@ -116,9 +116,9 @@ pub trait EngineMarket: Send + Sync {
     /// 获取交易规则
     /// <br> [`symbol`]: 交易对
     fn symbol_rule(&self, symbol: &str) -> Result<SymbolRule>;
-    /// 获取指数
+    /// 获取市场行情
     /// <br> [`symbol`]: 交易对
-    fn symbol_index(&self, symbol: &str) -> Result<SymbolIndex>;
+    fn symbol_market(&self, symbol: &str) -> Result<SymbolMarket>;
 }
 
 /// 策略
