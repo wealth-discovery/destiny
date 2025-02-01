@@ -4,7 +4,7 @@ use chrono::{DateTime, Datelike, Duration, Months, Utc};
 use destiny_helpers::prelude::*;
 use destiny_types::prelude::*;
 use futures::{stream::StreamExt, AsyncReadExt};
-use std::path::PathBuf;
+use std::{cmp::Ordering, path::PathBuf};
 use strum::IntoEnumIterator;
 use tokio::{
     fs::{create_dir_all, File},
@@ -499,8 +499,12 @@ impl SyncHistoryData {
     }
 }
 
+pub trait DecodeCsvRecordItem {
+    fn datetime(&self) -> DateTime<Utc>;
+}
+
 pub trait DecodeCsvRecord {
-    type T: Send + 'static;
+    type T: DecodeCsvRecordItem + Clone + Send + 'static;
     fn decode(record: &csv_async::StringRecord) -> Result<Self::T>;
 }
 
@@ -529,6 +533,12 @@ impl HistoryData {
     }
 }
 
+impl DecodeCsvRecordItem for FundingRateHistory {
+    fn datetime(&self) -> DateTime<Utc> {
+        self.time
+    }
+}
+
 impl DecodeCsvRecord for FundingRateHistory {
     type T = Self;
 
@@ -552,6 +562,12 @@ impl DecodeCsvRecord for FundingRateHistory {
             rate,
             time,
         })
+    }
+}
+
+impl DecodeCsvRecordItem for Kline {
+    fn datetime(&self) -> DateTime<Utc> {
+        self.open_time
     }
 }
 
@@ -688,7 +704,9 @@ where
                 let data = HistoryData::csv_read::<D>(&path).await?;
 
                 for item in data {
-                    tx.send(item).await.expect("发送数据失败");
+                    if item.datetime() >= begin && item.datetime() <= end {
+                        tx.send(item).await.expect("发送数据失败");
+                    }
                 }
 
                 begin_month = begin_month + Months::new(1);
@@ -701,5 +719,28 @@ where
             data_rx,
             curr_data: None,
         }
+    }
+
+    pub async fn take(&mut self, date: DateTime<Utc>) -> Result<Option<D::T>> {
+        if let Some(curr_data) = &self.curr_data {
+            match curr_data.datetime().cmp(&date) {
+                Ordering::Equal => return Ok(Some(curr_data.to_owned())),
+                Ordering::Greater => return Ok(None),
+                _ => {}
+            }
+        }
+
+        while let Some(data) = self.data_rx.recv().await {
+            self.curr_data = Some(data);
+            if let Some(curr_data) = &self.curr_data {
+                match curr_data.datetime().cmp(&date) {
+                    Ordering::Equal => return Ok(Some(curr_data.to_owned())),
+                    Ordering::Greater => return Ok(None),
+                    _ => {}
+                }
+            }
+        }
+
+        Ok(None)
     }
 }
