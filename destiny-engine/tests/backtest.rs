@@ -15,6 +15,7 @@ impl Strategy for BacktestStrategy {
     }
 
     async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
+        tracing::info!("on_tick: {}", engine.now());
         Ok(())
     }
 }

@@ -515,10 +515,7 @@ impl HistoryData {
     where
         D: DecodeCsvRecord,
     {
-        tracing::trace!("加载历史数据: {}", path.display());
-
         if !path.exists() {
-            tracing::trace!("文件不存在: {}", path.display());
             return Ok(vec![]);
         }
 
@@ -531,8 +528,6 @@ impl HistoryData {
             let record = record?;
             result.push(D::decode(&record)?);
         }
-
-        tracing::trace!("加载完成: 数量大小({})", result.len());
 
         Ok(result)
     }
@@ -706,8 +701,9 @@ where
 
             while begin_month <= end_month {
                 let path = base_path.join(format!("{}.csv", begin_month.str_ym()));
+                tracing::trace!("加载历史数据: {}", path.display());
                 let data = HistoryData::csv_read::<D>(&path).await?;
-
+                tracing::trace!("加载完成: {} 数量大小({})", path.display(), data.len());
                 for item in data {
                     if item.datetime() >= begin && item.datetime() <= end {
                         tx.send(item).await.expect("发送数据失败");
