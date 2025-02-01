@@ -1,50 +1,63 @@
-use anyhow::Result;
-use async_trait::async_trait;
 use destiny_engine::prelude::*;
-use destiny_helpers::prelude::*;
-use std::sync::Arc;
 
-struct BacktestStrategy;
+struct BacktestStrategy {
+    symbol: String,
+    is_buy: Arc<Mutex<bool>>,
+}
+
+impl BacktestStrategy {
+    pub fn new() -> Self {
+        Self {
+            symbol: "ETHUSDT".to_string(),
+            is_buy: Arc::new(Mutex::new(false)),
+        }
+    }
+}
 
 #[async_trait]
 #[allow(unused_variables)]
 impl Strategy for BacktestStrategy {
     async fn on_init(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        tracing::info!("on_init: {}", engine.now());
-        engine.init_symbol("TRUMPUSDT")?;
+        tracing::info!("{} on_init", engine.time());
+        engine.symbol_init(&self.symbol)?;
         Ok(())
     }
 
-    async fn on_start(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        tracing::info!("on_start: {}", engine.now());
-        Ok(())
-    }
-
-    async fn on_stop(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        tracing::info!("on_stop: {}", engine.now());
+    async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
+        if !*self.is_buy.lock() {
+            engine.long_market_open(&self.symbol, 1.).await?;
+            *self.is_buy.lock() = true;
+        }
+        let time = engine.time().str_ymd_hm();
+        let price_mark = engine.price_mark(&self.symbol);
+        let cash_available = engine.cash_available();
+        info!("{time} 标记价({price_mark:.2}),可用资金({cash_available:.2})");
         Ok(())
     }
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread")]
 async fn test_backtest() -> Result<()> {
-    if has_github_action_env() {
+    if bool::has_github_action() {
         return Ok(());
     }
 
-    init_log(
-        LogConfigBuilder::default()
-            .save_file(false)
-            .targets(vec!["backtest".to_string()])
-            .build()?,
-    )
-    .await?;
+    let log_collector = LogConfigBuilder::default()
+        .level(LogLevel::INFO)
+        .save_file(false)
+        .targets(vec!["backtest".to_string()])
+        .build()?
+        .init_log()
+        .await?;
 
     let config = BacktestConfigBuilder::default()
-        .begin(str_to_date("20240101")?)
-        .end(str_to_date("20240102")?)
+        .begin("2020".to_date()?)
+        .end("2024".to_date()?)
         .build()?;
 
-    run_backtest(config, Arc::new(BacktestStrategy)).await?;
+    Backtest::run(config, Arc::new(BacktestStrategy::new())).await?;
+
+    log_collector.done().await?;
+
     Ok(())
 }

@@ -128,6 +128,10 @@ pub enum OrderStatus {
     #[serde(rename = "filled")]
     #[strum(serialize = "filled")]
     Filled,
+    /// 取消中
+    #[serde(rename = "canceling")]
+    #[strum(serialize = "canceling")]
+    Canceling,
     /// 已取消
     #[serde(rename = "canceled")]
     #[strum(serialize = "canceled")]

@@ -9,7 +9,7 @@ pub struct Dao(Pool<Sqlite>);
 
 impl Dao {
     pub async fn new(path: &PathBuf, file_name: &str) -> Result<Self> {
-        let dir = cache_dir()?.join(path);
+        let dir = PathBuf::cache()?.join(path);
         create_dir_all(&dir).await?;
 
         let db = open_db(&dir.join(file_name)).await?;

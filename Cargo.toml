@@ -40,7 +40,15 @@ serde_json = { version = "1" }
 async-trait = { version = "0.1" }
 uuid = { version = "1", features = ["v4", "fast-rng", "macro-diagnostics"] }
 homedir = { version = "0.3" }
-polars = { version = "0.46" }
+polars = { version = "0.46", default-features = false, features = [
+    "lazy",
+    "describe",
+    "dtype-datetime",
+    "dtype-date",
+    "performant",
+    "nightly",
+    "cse",
+] }
 derive_builder = { version = "0.20" }
 sqlx = { version = "0.8", features = [
     "runtime-tokio",
