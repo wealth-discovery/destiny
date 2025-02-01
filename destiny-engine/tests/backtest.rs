@@ -15,19 +15,22 @@ impl Strategy for BacktestStrategy {
     }
 
     async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        tracing::info!("on_tick: {}", engine.symbol_market("ETHUSDT")?.last_price);
+        let cash = engine.cash();
+        if cash.available > 0. {
+            engine.open_market_long("ETHUSDT", 0.01).await?;
+        }
         Ok(())
     }
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread")]
 async fn test_backtest() -> Result<()> {
     if bool::has_github_action() {
         return Ok(());
     }
 
     let log_collector = LogConfigBuilder::default()
-        .level(LogLevel::DEBUG)
+        .level(LogLevel::INFO)
         .save_file(false)
         .targets(vec!["backtest".to_string()])
         .build()?

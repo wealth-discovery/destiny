@@ -48,7 +48,8 @@ impl EngineInit for Backtest {
             "重复初始化交易对: {}",
             symbol
         );
-        self.account.lock().symbols.insert(
+        let mut account = self.account.lock();
+        account.symbols.insert(
             symbol.to_string(),
             Symbol {
                 symbol: symbol.to_string(),
@@ -70,6 +71,27 @@ impl EngineInit for Backtest {
                     settlement_price: 0.,
                     next_settlement_time: Default::default(),
                     time: Default::default(),
+                },
+            },
+        );
+        account.positions.insert(
+            symbol.to_string(),
+            SymbolPosition {
+                symbol: symbol.to_string(),
+                leverage: 1,
+                long: Position {
+                    side: TradeSide::Long,
+                    price: 0.,
+                    size: 0.,
+                    available: 0.,
+                    frozen: 0.,
+                },
+                short: Position {
+                    side: TradeSide::Short,
+                    price: 0.,
+                    size: 0.,
+                    available: 0.,
+                    frozen: 0.,
                 },
             },
         );
