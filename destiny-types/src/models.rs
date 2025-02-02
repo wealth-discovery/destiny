@@ -56,7 +56,7 @@ pub struct SymbolMarket {
 }
 
 /// K线
-#[cfg_attr(feature = "python", pyo3::pyclass(get_all))]
+#[cfg_attr(feature = "python", pyo3::pyclass(get_all, frozen))]
 #[derive(Debug, Clone)]
 pub struct Kline {
     /// 交易对
@@ -145,7 +145,7 @@ pub struct FundingRateHistory {
 }
 
 /// 订单
-#[cfg_attr(feature = "python", pyo3::pyclass(get_all))]
+#[cfg_attr(feature = "python", pyo3::pyclass(get_all, frozen))]
 #[derive(Debug, Clone)]
 pub struct Order {
     /// ID

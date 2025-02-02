@@ -616,6 +616,7 @@ dependencies = [
 name = "destiny-python"
 version = "1.0.0"
 dependencies = [
+ "anyhow",
  "destiny-engine",
  "pyo3",
 ]

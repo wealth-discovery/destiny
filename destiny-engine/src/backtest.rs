@@ -1282,16 +1282,7 @@ impl Backtest {
     }
 
     pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<()> {
-        tracing::info!(
-            "\n\n\n{}\t    Author : {}\n\t   Version : {}\n\tRepository : {}\n\n\n",
-            LOGO,
-            AUTHOR,
-            VERSION,
-            REPOSITORY
-        );
-
         Self::new(config, strategy)?.run0().await?;
-
         Ok(())
     }
 }

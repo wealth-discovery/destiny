@@ -19,7 +19,7 @@ pub enum RunMode {
 }
 
 /// 交易类型
-#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int))]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, frozen))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display)]
 pub enum TradeType {
     /// 限价
@@ -33,7 +33,7 @@ pub enum TradeType {
 }
 
 /// 交易方向
-#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int))]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, frozen))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display)]
 pub enum TradeSide {
     /// 做多
@@ -112,7 +112,7 @@ pub enum KlineInterval {
 }
 
 /// 订单状态
-#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int))]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, frozen))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display)]
 pub enum OrderStatus {
     /// 已创建
