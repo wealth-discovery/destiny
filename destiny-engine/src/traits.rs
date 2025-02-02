@@ -2,6 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use destiny_types::prelude::*;
+use rust_decimal::Decimal;
 use std::sync::Arc;
 
 pub trait Engine: EngineInit + EngineAccount + EngineMarket + EngineExchange + Send + Sync {

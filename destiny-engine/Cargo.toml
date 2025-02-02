@@ -25,3 +25,5 @@ strum = { workspace = true }
 parking_lot = { workspace = true }
 rayon = { workspace = true }
 csv-async = { workspace = true }
+rust_decimal = { workspace = true }
+rust_decimal_macros = { workspace = true }

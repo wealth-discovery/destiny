@@ -26,7 +26,7 @@ impl Strategy for BacktestStrategy {
     async fn on_minutely(&self, engine: Arc<dyn Engine>) -> Result<()> {
         if !*self.is_buy.lock() {
             engine
-                .long_limit_open(&self.symbol, Decimal::new(1.0), Decimal::new(200.0))
+                .long_limit_open(&self.symbol, dec!(1), dec!(200))
                 .await?;
             *self.is_buy.lock() = true;
         }
@@ -54,7 +54,7 @@ async fn test_backtest() -> Result<()> {
 
     let config = BacktestConfigBuilder::default()
         .begin("2020".to_date()?)
-        .end("2024".to_date()?)
+        .end("2021".to_date()?)
         .build()?;
 
     Backtest::run(config, Arc::new(BacktestStrategy::new())).await?;

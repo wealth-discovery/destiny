@@ -7,6 +7,8 @@ use destiny_helpers::prelude::*;
 use destiny_types::prelude::*;
 use parking_lot::Mutex;
 use rayon::prelude::*;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use std::{collections::HashMap, sync::Arc};
 use tokio::time::Instant;
 
@@ -19,16 +21,16 @@ pub struct BacktestConfig {
     /// 结束时间
     pub end: DateTime<Utc>,
     /// 初始资金
-    #[builder(default = Decimal::new(1000.0))]
+    #[builder(default = dec!(1000))]
     pub cash: Decimal,
     /// 吃单手续费率
-    #[builder(default = Decimal::new(0.0005))]
+    #[builder(default = dec!(0.0005))]
     pub fee_rate_taker: Decimal,
     /// 挂单手续费率
-    #[builder(default = Decimal::new(0.0005))]
+    #[builder(default = dec!(0.0005))]
     pub fee_rate_maker: Decimal,
     /// 滑点
-    #[builder(default = Decimal::new(0.01))]
+    #[builder(default = dec!(0.01))]
     pub slippage_rate: Decimal,
 }
 
@@ -61,20 +63,20 @@ impl EngineInit for Backtest {
                     symbol: symbol.to_string(),
                     enable: true,
                     rule: SymbolRule {
-                        price_min: Decimal::new(1e-8),
-                        price_max: Decimal::new(1e8),
-                        price_tick: Decimal::new(1e-8),
-                        size_min: Decimal::new(1e-8),
-                        size_max: Decimal::new(1e8),
-                        size_tick: Decimal::new(1e-8),
-                        amount_min: Decimal::new(1e-8),
+                        price_min: dec!(1e-8),
+                        price_max: dec!(1e8),
+                        price_tick: dec!(1e-8),
+                        size_min: dec!(1e-8),
+                        size_max: dec!(1e8),
+                        size_tick: dec!(1e-8),
+                        amount_min: dec!(1e-8),
                         order_max: 200,
                     },
                     market: SymbolMarket {
-                        mark: Decimal::zero(),
-                        index: Decimal::zero(),
-                        last: Decimal::zero(),
-                        settlement: Decimal::zero(),
+                        mark: Decimal::ZERO,
+                        index: Decimal::ZERO,
+                        last: Decimal::ZERO,
+                        settlement: Decimal::ZERO,
                         settlement_time: Default::default(),
                         time: Default::default(),
                     },
@@ -82,13 +84,13 @@ impl EngineInit for Backtest {
                 leverage: 1,
                 long: Position {
                     side: TradeSide::Long,
-                    price: Decimal::zero(),
-                    size: Decimal::zero(),
+                    price: Decimal::ZERO,
+                    size: Decimal::ZERO,
                 },
                 short: Position {
                     side: TradeSide::Short,
-                    price: Decimal::zero(),
-                    size: Decimal::zero(),
+                    price: Decimal::ZERO,
+                    size: Decimal::ZERO,
                 },
                 orders: Default::default(),
             },
@@ -505,7 +507,7 @@ impl EngineExchange for Backtest {
         let size_max = self.rule_size_max(symbol);
         let size_tick = self.rule_size_tick(symbol);
         let amount_min = self.rule_amount_min(symbol);
-        let leverage = Decimal::new(self.leverage(symbol) as f64);
+        let leverage = Decimal::from(self.leverage(symbol));
         let cash_available = self.cash_available();
 
         let size = size - size_tick % size;
@@ -554,11 +556,11 @@ impl EngineExchange for Backtest {
                     side: TradeSide::Long,
                     reduce_only: false,
                     status: OrderStatus::Created,
-                    price: Decimal::zero(),
+                    price: Decimal::ZERO,
                     size,
-                    deal_price: Decimal::zero(),
-                    deal_size: Decimal::zero(),
-                    deal_fee: Decimal::zero(),
+                    deal_price: Decimal::ZERO,
+                    deal_size: Decimal::ZERO,
+                    deal_fee: Decimal::ZERO,
                     create_time: self.time(),
                 },
             );
@@ -578,7 +580,7 @@ impl EngineExchange for Backtest {
         let size_max = self.rule_size_max(symbol);
         let size_tick = self.rule_size_tick(symbol);
         let amount_min = self.rule_amount_min(symbol);
-        let leverage = Decimal::new(self.leverage(symbol) as f64);
+        let leverage = Decimal::from(self.leverage(symbol));
         let cash_available = self.cash_available();
 
         let size = size - size_tick % size;
@@ -643,9 +645,9 @@ impl EngineExchange for Backtest {
                     status: OrderStatus::Created,
                     price,
                     size,
-                    deal_price: Decimal::zero(),
-                    deal_size: Decimal::zero(),
-                    deal_fee: Decimal::zero(),
+                    deal_price: Decimal::ZERO,
+                    deal_size: Decimal::ZERO,
+                    deal_fee: Decimal::ZERO,
                     create_time: self.time(),
                 },
             );
@@ -693,11 +695,11 @@ impl EngineExchange for Backtest {
                     side: TradeSide::Long,
                     reduce_only: true,
                     status: OrderStatus::Created,
-                    price: Decimal::zero(),
+                    price: Decimal::ZERO,
                     size,
-                    deal_price: Decimal::zero(),
-                    deal_size: Decimal::zero(),
-                    deal_fee: Decimal::zero(),
+                    deal_price: Decimal::ZERO,
+                    deal_size: Decimal::ZERO,
+                    deal_fee: Decimal::ZERO,
                     create_time: self.time(),
                 },
             );
@@ -769,9 +771,9 @@ impl EngineExchange for Backtest {
                     status: OrderStatus::Created,
                     price,
                     size,
-                    deal_price: Decimal::zero(),
-                    deal_size: Decimal::zero(),
-                    deal_fee: Decimal::zero(),
+                    deal_price: Decimal::ZERO,
+                    deal_size: Decimal::ZERO,
+                    deal_fee: Decimal::ZERO,
                     create_time: self.time(),
                 },
             );
@@ -789,7 +791,7 @@ impl EngineExchange for Backtest {
         let size_max = self.rule_size_max(symbol);
         let size_tick = self.rule_size_tick(symbol);
         let amount_min = self.rule_amount_min(symbol);
-        let leverage = Decimal::new(self.leverage(symbol) as f64);
+        let leverage = Decimal::from(self.leverage(symbol));
         let cash_available = self.cash_available();
 
         let size = size - size_tick % size;
@@ -838,11 +840,11 @@ impl EngineExchange for Backtest {
                     side: TradeSide::Short,
                     reduce_only: false,
                     status: OrderStatus::Created,
-                    price: Decimal::zero(),
+                    price: Decimal::ZERO,
                     size,
-                    deal_price: Decimal::zero(),
-                    deal_size: Decimal::zero(),
-                    deal_fee: Decimal::zero(),
+                    deal_price: Decimal::ZERO,
+                    deal_size: Decimal::ZERO,
+                    deal_fee: Decimal::ZERO,
                     create_time: self.time(),
                 },
             );
@@ -867,7 +869,7 @@ impl EngineExchange for Backtest {
         let size_max = self.rule_size_max(symbol);
         let size_tick = self.rule_size_tick(symbol);
         let amount_min = self.rule_amount_min(symbol);
-        let leverage = Decimal::new(self.leverage(symbol) as f64);
+        let leverage = Decimal::from(self.leverage(symbol));
         let cash_available = self.cash_available();
 
         let size = size - size_tick % size;
@@ -932,9 +934,9 @@ impl EngineExchange for Backtest {
                     status: OrderStatus::Created,
                     price,
                     size,
-                    deal_price: Decimal::zero(),
-                    deal_size: Decimal::zero(),
-                    deal_fee: Decimal::zero(),
+                    deal_price: Decimal::ZERO,
+                    deal_size: Decimal::ZERO,
+                    deal_fee: Decimal::ZERO,
                     create_time: self.time(),
                 },
             );
@@ -982,11 +984,11 @@ impl EngineExchange for Backtest {
                     side: TradeSide::Short,
                     reduce_only: true,
                     status: OrderStatus::Created,
-                    price: Decimal::zero(),
+                    price: Decimal::ZERO,
                     size,
-                    deal_price: Decimal::zero(),
-                    deal_size: Decimal::zero(),
-                    deal_fee: Decimal::zero(),
+                    deal_price: Decimal::ZERO,
+                    deal_size: Decimal::ZERO,
+                    deal_fee: Decimal::ZERO,
                     create_time: self.time(),
                 },
             );
@@ -1058,9 +1060,9 @@ impl EngineExchange for Backtest {
                     status: OrderStatus::Created,
                     price,
                     size,
-                    deal_price: Decimal::zero(),
-                    deal_size: Decimal::zero(),
-                    deal_fee: Decimal::zero(),
+                    deal_price: Decimal::ZERO,
+                    deal_size: Decimal::ZERO,
+                    deal_fee: Decimal::ZERO,
                     create_time: self.time(),
                 },
             );
@@ -1243,12 +1245,9 @@ impl Backtest {
         config.end = config.end.truncate_minute()?;
         ensure!(config.begin < config.end, "开始时间必须小于结束时间");
 
-        ensure!(config.cash >= Decimal::zero(), "初始资金必须大于等于0");
+        ensure!(config.cash >= Decimal::ZERO, "初始资金必须大于等于0");
 
-        ensure!(
-            config.slippage_rate >= Decimal::zero(),
-            "滑点率必须大于等于0"
-        );
+        ensure!(config.slippage_rate >= Decimal::ZERO, "滑点率必须大于等于0");
 
         let config = Arc::new(config);
 
@@ -1308,7 +1307,7 @@ impl Backtest {
             begin += Duration::minutes(1);
         }
 
-        tracing::debug!("回测耗时: {:?}", backtest_instant.elapsed());
+        tracing::info!("回测耗时: {:?}", backtest_instant.elapsed());
 
         self.on_stop().await?;
 

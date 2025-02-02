@@ -4,6 +4,7 @@ use chrono::{DateTime, Datelike, Duration, Months, Utc};
 use destiny_helpers::prelude::*;
 use destiny_types::prelude::*;
 use futures::{stream::StreamExt, AsyncReadExt};
+use rust_decimal::{prelude::FromPrimitive, Decimal};
 use std::{cmp::Ordering, path::PathBuf};
 use strum::IntoEnumIterator;
 use tokio::{
@@ -550,12 +551,13 @@ impl DecodeCsvRecord for FundingRateHistory {
             .to_date()?
             .truncate_hour()?;
 
-        let rate: Decimal = Decimal::new(
+        let rate = Decimal::from_f64(
             record
                 .get(2)
                 .ok_or(anyhow!("资金费率不存在"))?
                 .parse::<f64>()?,
-        );
+        )
+        .ok_or(anyhow!("资金费率转换失败"))?;
 
         Ok(Self {
             symbol: Default::default(),
@@ -583,66 +585,74 @@ impl DecodeCsvRecord for Kline {
             .to_date()?
             .truncate_minute()?;
 
-        let open = Decimal::new(
+        let open = Decimal::from_f64(
             record
                 .get(1)
                 .ok_or(anyhow!("开盘价不存在"))?
                 .parse::<f64>()?,
-        );
+        )
+        .ok_or(anyhow!("开盘价转换失败"))?;
 
-        let high = Decimal::new(
+        let high = Decimal::from_f64(
             record
                 .get(2)
                 .ok_or(anyhow!("最高价不存在"))?
                 .parse::<f64>()?,
-        );
+        )
+        .ok_or(anyhow!("最高价转换失败"))?;
 
-        let low = Decimal::new(
+        let low = Decimal::from_f64(
             record
                 .get(3)
                 .ok_or(anyhow!("最低价不存在"))?
                 .parse::<f64>()?,
-        );
+        )
+        .ok_or(anyhow!("最低价转换失败"))?;
 
-        let close = Decimal::new(
+        let close = Decimal::from_f64(
             record
                 .get(4)
                 .ok_or(anyhow!("收盘价不存在"))?
                 .parse::<f64>()?,
-        );
+        )
+        .ok_or(anyhow!("收盘价转换失败"))?;
 
-        let size = Decimal::new(
+        let size = Decimal::from_f64(
             record
                 .get(5)
                 .ok_or(anyhow!("成交量不存在"))?
                 .parse::<f64>()?,
-        );
+        )
+        .ok_or(anyhow!("成交量转换失败"))?;
 
-        let cash = Decimal::new(
+        let cash = Decimal::from_f64(
             record
                 .get(7)
                 .ok_or(anyhow!("成交额不存在"))?
                 .parse::<f64>()?,
-        );
+        )
+        .ok_or(anyhow!("成交额转换失败"))?;
 
         let trades = record
             .get(8)
             .ok_or(anyhow!("交易笔数不存在"))?
             .parse::<i64>()?;
 
-        let buy_size = Decimal::new(
+        let buy_size = Decimal::from_f64(
             record
                 .get(9)
                 .ok_or(anyhow!("买方成交量不存在"))?
                 .parse::<f64>()?,
-        );
+        )
+        .ok_or(anyhow!("买方成交量转换失败"))?;
 
-        let buy_cash = Decimal::new(
+        let buy_cash = Decimal::from_f64(
             record
                 .get(10)
                 .ok_or(anyhow!("买方成交额不存在"))?
                 .parse::<f64>()?,
-        );
+        )
+        .ok_or(anyhow!("买方成交额转换失败"))?;
 
         Ok(Self {
             symbol: Default::default(),

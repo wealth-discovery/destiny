@@ -1,7 +1,7 @@
-use crate::{decimal::Decimal, enums::*};
+use crate::enums::*;
 use chrono::{DateTime, Utc};
-use destiny_helpers::prelude::*;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rust_decimal::Decimal;
 use std::collections::HashMap;
 
 /// 交易对
@@ -179,7 +179,7 @@ pub struct Order {
 impl Order {
     pub fn margin(&self, mark_price: Decimal, leverage: u32) -> Decimal {
         if self.reduce_only {
-            return Decimal::zero();
+            return Decimal::ZERO;
         }
         (self.size - self.deal_size)
             * if self.r#type == TradeType::Limit {
@@ -187,7 +187,7 @@ impl Order {
             } else {
                 mark_price
             }
-            / Decimal::new(leverage as f64)
+            / Decimal::from(leverage)
     }
 }
 
@@ -204,18 +204,18 @@ pub struct Position {
 
 impl Position {
     pub fn margin(&self, mark_price: Decimal, leverage: u32) -> Decimal {
-        self.size * mark_price / Decimal::new(leverage as f64)
+        self.size * mark_price / Decimal::from(leverage)
     }
 
     pub fn pnl(&self, mark_price: Decimal) -> Decimal {
         if self.size.is_zero() {
-            return Decimal::zero();
+            return Decimal::ZERO;
         }
         (mark_price - self.price)
             * self.size
             * match self.side {
-                TradeSide::Long => Decimal::one(),
-                TradeSide::Short => Decimal::one_neg(),
+                TradeSide::Long => Decimal::ONE,
+                TradeSide::Short => Decimal::NEGATIVE_ONE,
             }
     }
 }
