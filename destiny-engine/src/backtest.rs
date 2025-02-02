@@ -19,17 +19,17 @@ pub struct BacktestConfig {
     /// 结束时间
     pub end: DateTime<Utc>,
     /// 初始资金
-    #[builder(default = 1000.)]
-    pub cash: f64,
+    #[builder(default = Decimal::new(1000.0))]
+    pub cash: Decimal,
     /// 吃单手续费率
-    #[builder(default = 0.0005)]
-    pub fee_rate_taker: f64,
+    #[builder(default = Decimal::new(0.0005))]
+    pub fee_rate_taker: Decimal,
     /// 挂单手续费率
-    #[builder(default = 0.0005)]
-    pub fee_rate_maker: f64,
+    #[builder(default = Decimal::new(0.0005))]
+    pub fee_rate_maker: Decimal,
     /// 滑点
-    #[builder(default = 0.01)]
-    pub slippage_rate: f64,
+    #[builder(default = Decimal::new(0.01))]
+    pub slippage_rate: Decimal,
 }
 
 pub struct Backtest {
@@ -61,20 +61,20 @@ impl EngineInit for Backtest {
                     symbol: symbol.to_string(),
                     enable: true,
                     rule: SymbolRule {
-                        price_min: 1e-8,
-                        price_max: 1e8,
-                        price_tick: 1e-8,
-                        size_min: 1e-8,
-                        size_max: 1e8,
-                        size_tick: 1e-8,
-                        amount_min: 1e-8,
+                        price_min: Decimal::new(1e-8),
+                        price_max: Decimal::new(1e8),
+                        price_tick: Decimal::new(1e-8),
+                        size_min: Decimal::new(1e-8),
+                        size_max: Decimal::new(1e8),
+                        size_tick: Decimal::new(1e-8),
+                        amount_min: Decimal::new(1e-8),
                         order_max: 200,
                     },
                     market: SymbolMarket {
-                        mark: 0.,
-                        index: 0.,
-                        last: 0.,
-                        settlement: 0.,
+                        mark: Decimal::zero(),
+                        index: Decimal::zero(),
+                        last: Decimal::zero(),
+                        settlement: Decimal::zero(),
                         settlement_time: Default::default(),
                         time: Default::default(),
                     },
@@ -82,13 +82,13 @@ impl EngineInit for Backtest {
                 leverage: 1,
                 long: Position {
                     side: TradeSide::Long,
-                    price: 0.,
-                    size: 0.,
+                    price: Decimal::zero(),
+                    size: Decimal::zero(),
                 },
                 short: Position {
                     side: TradeSide::Short,
-                    price: 0.,
-                    size: 0.,
+                    price: Decimal::zero(),
+                    size: Decimal::zero(),
                 },
                 orders: Default::default(),
             },
@@ -243,22 +243,22 @@ impl EngineAccount for Backtest {
             .map(|p| p.leverage)
             .unwrap_or(1)
     }
-    fn cash(&self) -> f64 {
+    fn cash(&self) -> Decimal {
         self.account.lock().cash
     }
-    fn cash_available(&self) -> f64 {
+    fn cash_available(&self) -> Decimal {
         self.account.lock().cash_available()
     }
-    fn cash_frozen(&self) -> f64 {
+    fn cash_frozen(&self) -> Decimal {
         self.account.lock().cash_frozen()
     }
-    fn margin(&self) -> f64 {
+    fn margin(&self) -> Decimal {
         self.account.lock().margin()
     }
-    fn pnl(&self) -> f64 {
+    fn pnl(&self) -> Decimal {
         self.account.lock().pnl()
     }
-    fn long_price(&self, symbol: &str) -> f64 {
+    fn long_price(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -266,7 +266,7 @@ impl EngineAccount for Backtest {
             .map(|position| position.long.price)
             .unwrap_or_default()
     }
-    fn long_size(&self, symbol: &str) -> f64 {
+    fn long_size(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -274,7 +274,7 @@ impl EngineAccount for Backtest {
             .map(|position| position.long.size)
             .unwrap_or_default()
     }
-    fn long_size_available(&self, symbol: &str) -> f64 {
+    fn long_size_available(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -282,7 +282,7 @@ impl EngineAccount for Backtest {
             .map(|position| position.long_size_available())
             .unwrap_or_default()
     }
-    fn long_size_frozen(&self, symbol: &str) -> f64 {
+    fn long_size_frozen(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -290,7 +290,7 @@ impl EngineAccount for Backtest {
             .map(|position| position.long_size_frozen())
             .unwrap_or_default()
     }
-    fn long_margin(&self, symbol: &str) -> f64 {
+    fn long_margin(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -298,7 +298,7 @@ impl EngineAccount for Backtest {
             .map(|position| position.margin_long())
             .unwrap_or_default()
     }
-    fn long_pnl(&self, symbol: &str) -> f64 {
+    fn long_pnl(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -306,7 +306,7 @@ impl EngineAccount for Backtest {
             .map(|position| position.long_pnl())
             .unwrap_or_default()
     }
-    fn short_price(&self, symbol: &str) -> f64 {
+    fn short_price(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -314,7 +314,7 @@ impl EngineAccount for Backtest {
             .map(|position| position.short.price)
             .unwrap_or_default()
     }
-    fn short_size(&self, symbol: &str) -> f64 {
+    fn short_size(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -322,7 +322,7 @@ impl EngineAccount for Backtest {
             .map(|position| position.short.size)
             .unwrap_or_default()
     }
-    fn short_size_available(&self, symbol: &str) -> f64 {
+    fn short_size_available(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -330,7 +330,7 @@ impl EngineAccount for Backtest {
             .map(|position| position.short_size_available())
             .unwrap_or_default()
     }
-    fn short_size_frozen(&self, symbol: &str) -> f64 {
+    fn short_size_frozen(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -338,7 +338,7 @@ impl EngineAccount for Backtest {
             .map(|position| position.short_size_frozen())
             .unwrap_or_default()
     }
-    fn short_margin(&self, symbol: &str) -> f64 {
+    fn short_margin(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -346,7 +346,7 @@ impl EngineAccount for Backtest {
             .map(|position| position.margin_short())
             .unwrap_or_default()
     }
-    fn short_pnl(&self, symbol: &str) -> f64 {
+    fn short_pnl(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -354,7 +354,7 @@ impl EngineAccount for Backtest {
             .map(|position| position.short_pnl())
             .unwrap_or_default()
     }
-    fn symbol_pnl(&self, symbol: &str) -> f64 {
+    fn symbol_pnl(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -362,7 +362,7 @@ impl EngineAccount for Backtest {
             .map(|position| position.pnl())
             .unwrap_or_default()
     }
-    fn symbol_margin(&self, symbol: &str) -> f64 {
+    fn symbol_margin(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -373,7 +373,7 @@ impl EngineAccount for Backtest {
 }
 
 impl EngineMarket for Backtest {
-    fn price_mark(&self, symbol: &str) -> f64 {
+    fn price_mark(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -382,7 +382,7 @@ impl EngineMarket for Backtest {
             .unwrap_or_default()
     }
 
-    fn price_last(&self, symbol: &str) -> f64 {
+    fn price_last(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -391,7 +391,7 @@ impl EngineMarket for Backtest {
             .unwrap_or_default()
     }
 
-    fn price_index(&self, symbol: &str) -> f64 {
+    fn price_index(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -400,7 +400,7 @@ impl EngineMarket for Backtest {
             .unwrap_or_default()
     }
 
-    fn price_settlement(&self, symbol: &str) -> f64 {
+    fn price_settlement(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -418,7 +418,7 @@ impl EngineMarket for Backtest {
             .unwrap_or_default()
     }
 
-    fn rule_price_min(&self, symbol: &str) -> f64 {
+    fn rule_price_min(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -427,7 +427,7 @@ impl EngineMarket for Backtest {
             .unwrap_or_default()
     }
 
-    fn rule_price_max(&self, symbol: &str) -> f64 {
+    fn rule_price_max(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -436,7 +436,7 @@ impl EngineMarket for Backtest {
             .unwrap_or_default()
     }
 
-    fn rule_price_tick(&self, symbol: &str) -> f64 {
+    fn rule_price_tick(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -445,7 +445,7 @@ impl EngineMarket for Backtest {
             .unwrap_or_default()
     }
 
-    fn rule_size_min(&self, symbol: &str) -> f64 {
+    fn rule_size_min(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -454,7 +454,7 @@ impl EngineMarket for Backtest {
             .unwrap_or_default()
     }
 
-    fn rule_size_max(&self, symbol: &str) -> f64 {
+    fn rule_size_max(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -463,7 +463,7 @@ impl EngineMarket for Backtest {
             .unwrap_or_default()
     }
 
-    fn rule_size_tick(&self, symbol: &str) -> f64 {
+    fn rule_size_tick(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -472,7 +472,7 @@ impl EngineMarket for Backtest {
             .unwrap_or_default()
     }
 
-    fn rule_amount_min(&self, symbol: &str) -> f64 {
+    fn rule_amount_min(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
             .positions
@@ -493,7 +493,7 @@ impl EngineMarket for Backtest {
 
 #[async_trait]
 impl EngineExchange for Backtest {
-    async fn long_market_open(&self, symbol: &str, size: f64) -> Result<String> {
+    async fn long_market_open(&self, symbol: &str, size: Decimal) -> Result<String> {
         ensure!(
             self.account.lock().positions.contains_key(symbol),
             "交易对不存在: {}",
@@ -505,10 +505,10 @@ impl EngineExchange for Backtest {
         let size_max = self.rule_size_max(symbol);
         let size_tick = self.rule_size_tick(symbol);
         let amount_min = self.rule_amount_min(symbol);
-        let leverage = self.leverage(symbol) as f64;
+        let leverage = Decimal::new(self.leverage(symbol) as f64);
         let cash_available = self.cash_available();
 
-        let size = (size - (size_tick % size)).to_safe();
+        let size = size - size_tick % size;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -522,7 +522,7 @@ impl EngineExchange for Backtest {
             size_max,
         );
 
-        let amount = (size * price_mark).to_safe();
+        let amount = size * price_mark;
         ensure!(
             amount >= amount_min,
             "最小金额限制: 金额({}),限制({})",
@@ -530,7 +530,7 @@ impl EngineExchange for Backtest {
             amount_min,
         );
 
-        let margin = (amount / leverage).to_safe();
+        let margin = amount / leverage;
         ensure!(
             cash_available >= margin,
             "保证金不足: 保证金({}),可用({})",
@@ -554,17 +554,17 @@ impl EngineExchange for Backtest {
                     side: TradeSide::Long,
                     reduce_only: false,
                     status: OrderStatus::Created,
-                    price: 0.,
+                    price: Decimal::zero(),
                     size,
-                    deal_price: 0.,
-                    deal_size: 0.,
-                    deal_fee: 0.,
+                    deal_price: Decimal::zero(),
+                    deal_size: Decimal::zero(),
+                    deal_fee: Decimal::zero(),
                     create_time: self.time(),
                 },
             );
         Ok(order_id)
     }
-    async fn long_limit_open(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
+    async fn long_limit_open(&self, symbol: &str, size: Decimal, price: Decimal) -> Result<String> {
         ensure!(
             self.account.lock().positions.contains_key(symbol),
             "交易对不存在: {}",
@@ -578,10 +578,10 @@ impl EngineExchange for Backtest {
         let size_max = self.rule_size_max(symbol);
         let size_tick = self.rule_size_tick(symbol);
         let amount_min = self.rule_amount_min(symbol);
-        let leverage = self.leverage(symbol) as f64;
+        let leverage = Decimal::new(self.leverage(symbol) as f64);
         let cash_available = self.cash_available();
 
-        let size = (size - (size_tick % size)).to_safe();
+        let size = size - size_tick % size;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -595,7 +595,7 @@ impl EngineExchange for Backtest {
             size_max,
         );
 
-        let price = (price - (price_tick % price)).to_safe();
+        let price = price - price_tick % price;
         ensure!(
             price >= price_min,
             "最低价格限制: 价格({}),限制({})",
@@ -609,7 +609,7 @@ impl EngineExchange for Backtest {
             price_max
         );
 
-        let amount = (size * price).to_safe();
+        let amount = size * price;
         ensure!(
             amount >= amount_min,
             "最小金额限制: 金额({}),限制({})",
@@ -617,7 +617,7 @@ impl EngineExchange for Backtest {
             amount_min
         );
 
-        let margin = (amount / leverage).to_safe();
+        let margin = amount / leverage;
         ensure!(
             cash_available >= margin,
             "保证金不足: 保证金({}),可用({})",
@@ -643,15 +643,15 @@ impl EngineExchange for Backtest {
                     status: OrderStatus::Created,
                     price,
                     size,
-                    deal_price: 0.,
-                    deal_size: 0.,
-                    deal_fee: 0.,
+                    deal_price: Decimal::zero(),
+                    deal_size: Decimal::zero(),
+                    deal_fee: Decimal::zero(),
                     create_time: self.time(),
                 },
             );
         Ok(order_id)
     }
-    async fn long_market_close(&self, symbol: &str, size: f64) -> Result<String> {
+    async fn long_market_close(&self, symbol: &str, size: Decimal) -> Result<String> {
         ensure!(
             self.account.lock().positions.contains_key(symbol),
             "交易对不存在: {}",
@@ -662,7 +662,7 @@ impl EngineExchange for Backtest {
         let size_tick = self.rule_size_tick(symbol);
         let long_size_available = self.long_size_available(symbol);
 
-        let size = (size - (size_tick % size)).to_safe();
+        let size = size - size_tick % size;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -693,17 +693,22 @@ impl EngineExchange for Backtest {
                     side: TradeSide::Long,
                     reduce_only: true,
                     status: OrderStatus::Created,
-                    price: 0.,
+                    price: Decimal::zero(),
                     size,
-                    deal_price: 0.,
-                    deal_size: 0.,
-                    deal_fee: 0.,
+                    deal_price: Decimal::zero(),
+                    deal_size: Decimal::zero(),
+                    deal_fee: Decimal::zero(),
                     create_time: self.time(),
                 },
             );
         Ok(order_id)
     }
-    async fn long_limit_close(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
+    async fn long_limit_close(
+        &self,
+        symbol: &str,
+        size: Decimal,
+        price: Decimal,
+    ) -> Result<String> {
         ensure!(
             self.account.lock().positions.contains_key(symbol),
             "交易对不存在: {}",
@@ -717,7 +722,7 @@ impl EngineExchange for Backtest {
         let size_tick = self.rule_size_tick(symbol);
         let long_size_available = self.long_size_available(symbol);
 
-        let size = (size - (size_tick % size)).to_safe();
+        let size = size - size_tick % size;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -725,7 +730,7 @@ impl EngineExchange for Backtest {
             size_min
         );
 
-        let price = (price - (price_tick % price)).to_safe();
+        let price = price - price_tick % price;
         ensure!(
             price >= price_min,
             "最低价格限制: 价格({}),限制({})",
@@ -764,15 +769,15 @@ impl EngineExchange for Backtest {
                     status: OrderStatus::Created,
                     price,
                     size,
-                    deal_price: 0.,
-                    deal_size: 0.,
-                    deal_fee: 0.,
+                    deal_price: Decimal::zero(),
+                    deal_size: Decimal::zero(),
+                    deal_fee: Decimal::zero(),
                     create_time: self.time(),
                 },
             );
         Ok(order_id)
     }
-    async fn short_market_open(&self, symbol: &str, size: f64) -> Result<String> {
+    async fn short_market_open(&self, symbol: &str, size: Decimal) -> Result<String> {
         ensure!(
             self.account.lock().positions.contains_key(symbol),
             "交易对不存在: {}",
@@ -784,10 +789,10 @@ impl EngineExchange for Backtest {
         let size_max = self.rule_size_max(symbol);
         let size_tick = self.rule_size_tick(symbol);
         let amount_min = self.rule_amount_min(symbol);
-        let leverage = self.leverage(symbol) as f64;
+        let leverage = Decimal::new(self.leverage(symbol) as f64);
         let cash_available = self.cash_available();
 
-        let size = (size - (size_tick % size)).to_safe();
+        let size = size - size_tick % size;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -801,7 +806,7 @@ impl EngineExchange for Backtest {
             size_max,
         );
 
-        let amount = (size * price_mark).to_safe();
+        let amount = size * price_mark;
         ensure!(
             amount >= amount_min,
             "最小金额限制: 金额({}),限制({})",
@@ -809,7 +814,7 @@ impl EngineExchange for Backtest {
             amount_min
         );
 
-        let margin = (amount / leverage).to_safe();
+        let margin = amount / leverage;
         ensure!(
             cash_available >= margin,
             "保证金不足: 保证金({}),可用({})",
@@ -833,17 +838,22 @@ impl EngineExchange for Backtest {
                     side: TradeSide::Short,
                     reduce_only: false,
                     status: OrderStatus::Created,
-                    price: 0.,
+                    price: Decimal::zero(),
                     size,
-                    deal_price: 0.,
-                    deal_size: 0.,
-                    deal_fee: 0.,
+                    deal_price: Decimal::zero(),
+                    deal_size: Decimal::zero(),
+                    deal_fee: Decimal::zero(),
                     create_time: self.time(),
                 },
             );
         Ok(order_id)
     }
-    async fn short_limit_open(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
+    async fn short_limit_open(
+        &self,
+        symbol: &str,
+        size: Decimal,
+        price: Decimal,
+    ) -> Result<String> {
         ensure!(
             self.account.lock().positions.contains_key(symbol),
             "交易对不存在: {}",
@@ -857,10 +867,10 @@ impl EngineExchange for Backtest {
         let size_max = self.rule_size_max(symbol);
         let size_tick = self.rule_size_tick(symbol);
         let amount_min = self.rule_amount_min(symbol);
-        let leverage = self.leverage(symbol) as f64;
+        let leverage = Decimal::new(self.leverage(symbol) as f64);
         let cash_available = self.cash_available();
 
-        let size = (size - (size_tick % size)).to_safe();
+        let size = size - size_tick % size;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -874,7 +884,7 @@ impl EngineExchange for Backtest {
             size_max,
         );
 
-        let price = (price - (price_tick % price)).to_safe();
+        let price = price - price_tick % price;
         ensure!(
             price >= price_min,
             "最低价格限制: 价格({}),限制({})",
@@ -888,7 +898,7 @@ impl EngineExchange for Backtest {
             price_max
         );
 
-        let amount = (size * price).to_safe();
+        let amount = size * price;
         ensure!(
             amount >= amount_min,
             "最小金额限制: 金额({}),限制({})",
@@ -896,7 +906,7 @@ impl EngineExchange for Backtest {
             amount_min
         );
 
-        let margin = (amount / leverage).to_safe();
+        let margin = amount / leverage;
         ensure!(
             cash_available >= margin,
             "保证金不足: 保证金({}),可用({})",
@@ -922,15 +932,15 @@ impl EngineExchange for Backtest {
                     status: OrderStatus::Created,
                     price,
                     size,
-                    deal_price: 0.,
-                    deal_size: 0.,
-                    deal_fee: 0.,
+                    deal_price: Decimal::zero(),
+                    deal_size: Decimal::zero(),
+                    deal_fee: Decimal::zero(),
                     create_time: self.time(),
                 },
             );
         Ok(order_id)
     }
-    async fn short_market_close(&self, symbol: &str, size: f64) -> Result<String> {
+    async fn short_market_close(&self, symbol: &str, size: Decimal) -> Result<String> {
         ensure!(
             self.account.lock().positions.contains_key(symbol),
             "交易对不存在: {}",
@@ -941,7 +951,7 @@ impl EngineExchange for Backtest {
         let size_min = self.rule_size_min(symbol);
         let short_size_available = self.short_size_available(symbol);
 
-        let size = (size - (size_tick % size)).to_safe();
+        let size = size - size_tick % size;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -972,17 +982,22 @@ impl EngineExchange for Backtest {
                     side: TradeSide::Short,
                     reduce_only: true,
                     status: OrderStatus::Created,
-                    price: 0.,
+                    price: Decimal::zero(),
                     size,
-                    deal_price: 0.,
-                    deal_size: 0.,
-                    deal_fee: 0.,
+                    deal_price: Decimal::zero(),
+                    deal_size: Decimal::zero(),
+                    deal_fee: Decimal::zero(),
                     create_time: self.time(),
                 },
             );
         Ok(order_id)
     }
-    async fn short_limit_close(&self, symbol: &str, size: f64, price: f64) -> Result<String> {
+    async fn short_limit_close(
+        &self,
+        symbol: &str,
+        size: Decimal,
+        price: Decimal,
+    ) -> Result<String> {
         ensure!(
             self.account.lock().positions.contains_key(symbol),
             "交易对不存在: {}",
@@ -996,7 +1011,7 @@ impl EngineExchange for Backtest {
         let size_min = self.rule_size_min(symbol);
         let short_size_available = self.short_size_available(symbol);
 
-        let size = (size - (size_tick % size)).to_safe();
+        let size = size - size_tick % size;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -1004,7 +1019,7 @@ impl EngineExchange for Backtest {
             size_min
         );
 
-        let price = (price - (price_tick % price)).to_safe();
+        let price = price - price_tick % price;
         ensure!(
             price >= price_min,
             "最低价格限制: 价格({}),限制({})",
@@ -1043,9 +1058,9 @@ impl EngineExchange for Backtest {
                     status: OrderStatus::Created,
                     price,
                     size,
-                    deal_price: 0.,
-                    deal_size: 0.,
-                    deal_fee: 0.,
+                    deal_price: Decimal::zero(),
+                    deal_size: Decimal::zero(),
+                    deal_fee: Decimal::zero(),
                     create_time: self.time(),
                 },
             );
@@ -1228,14 +1243,12 @@ impl Backtest {
         config.end = config.end.truncate_minute()?;
         ensure!(config.begin < config.end, "开始时间必须小于结束时间");
 
-        config.cash = config.cash.to_safe();
-        ensure!(config.cash >= 0.0, "初始资金必须大于等于0");
+        ensure!(config.cash >= Decimal::zero(), "初始资金必须大于等于0");
 
-        config.fee_rate_taker = config.fee_rate_taker.to_safe();
-        config.fee_rate_maker = config.fee_rate_maker.to_safe();
-
-        config.slippage_rate = config.slippage_rate.to_safe();
-        ensure!(config.slippage_rate >= 0.0, "滑点率必须大于等于0");
+        ensure!(
+            config.slippage_rate >= Decimal::zero(),
+            "滑点率必须大于等于0"
+        );
 
         let config = Arc::new(config);
 

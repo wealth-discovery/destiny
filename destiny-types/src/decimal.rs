@@ -2,18 +2,40 @@ use destiny_helpers::num::F64NumSupport;
 use std::{
     cmp::Ordering,
     fmt::{Debug, Display},
+    iter::Sum,
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign},
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Decimal(f64);
 
 impl Decimal {
     pub fn new(value: f64) -> Self {
         Self(value.to_safe())
     }
+
     pub fn to_f64(self) -> f64 {
         self.0
+    }
+
+    #[inline]
+    pub fn is_zero(&self) -> bool {
+        self.0 == 0.
+    }
+
+    #[inline]
+    pub fn zero() -> Self {
+        Self(0.0)
+    }
+
+    #[inline]
+    pub fn one() -> Self {
+        Self(1.0)
+    }
+
+    #[inline]
+    pub fn one_neg() -> Self {
+        Self(-1.0)
     }
 }
 
@@ -92,6 +114,12 @@ impl Neg for Decimal {
 
     fn neg(self) -> Self::Output {
         Self(-self.0)
+    }
+}
+
+impl Sum for Decimal {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Decimal::zero(), |acc, item| acc + item)
     }
 }
 

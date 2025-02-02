@@ -25,7 +25,9 @@ impl Strategy for BacktestStrategy {
 
     async fn on_minutely(&self, engine: Arc<dyn Engine>) -> Result<()> {
         if !*self.is_buy.lock() {
-            engine.long_limit_open(&self.symbol, 1., 200.).await?;
+            engine
+                .long_limit_open(&self.symbol, Decimal::new(1.0), Decimal::new(200.0))
+                .await?;
             *self.is_buy.lock() = true;
         }
         let time = engine.time().str_ymd_hm();

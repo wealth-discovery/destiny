@@ -550,11 +550,12 @@ impl DecodeCsvRecord for FundingRateHistory {
             .to_date()?
             .truncate_hour()?;
 
-        let rate = record
-            .get(2)
-            .ok_or(anyhow!("资金费率不存在"))?
-            .parse::<f64>()?
-            .to_safe();
+        let rate: Decimal = Decimal::new(
+            record
+                .get(2)
+                .ok_or(anyhow!("资金费率不存在"))?
+                .parse::<f64>()?,
+        );
 
         Ok(Self {
             symbol: Default::default(),
@@ -582,58 +583,66 @@ impl DecodeCsvRecord for Kline {
             .to_date()?
             .truncate_minute()?;
 
-        let open = record
-            .get(1)
-            .ok_or(anyhow!("开盘价不存在"))?
-            .parse::<f64>()?
-            .to_safe();
+        let open = Decimal::new(
+            record
+                .get(1)
+                .ok_or(anyhow!("开盘价不存在"))?
+                .parse::<f64>()?,
+        );
 
-        let high = record
-            .get(2)
-            .ok_or(anyhow!("最高价不存在"))?
-            .parse::<f64>()?
-            .to_safe();
+        let high = Decimal::new(
+            record
+                .get(2)
+                .ok_or(anyhow!("最高价不存在"))?
+                .parse::<f64>()?,
+        );
 
-        let low = record
-            .get(3)
-            .ok_or(anyhow!("最低价不存在"))?
-            .parse::<f64>()?
-            .to_safe();
+        let low = Decimal::new(
+            record
+                .get(3)
+                .ok_or(anyhow!("最低价不存在"))?
+                .parse::<f64>()?,
+        );
 
-        let close = record
-            .get(4)
-            .ok_or(anyhow!("收盘价不存在"))?
-            .parse::<f64>()?
-            .to_safe();
+        let close = Decimal::new(
+            record
+                .get(4)
+                .ok_or(anyhow!("收盘价不存在"))?
+                .parse::<f64>()?,
+        );
 
-        let size = record
-            .get(5)
-            .ok_or(anyhow!("成交量不存在"))?
-            .parse::<f64>()?
-            .to_safe();
+        let size = Decimal::new(
+            record
+                .get(5)
+                .ok_or(anyhow!("成交量不存在"))?
+                .parse::<f64>()?,
+        );
 
-        let cash = record
-            .get(7)
-            .ok_or(anyhow!("成交额不存在"))?
-            .parse::<f64>()?
-            .to_safe();
+        let cash = Decimal::new(
+            record
+                .get(7)
+                .ok_or(anyhow!("成交额不存在"))?
+                .parse::<f64>()?,
+        );
 
         let trades = record
             .get(8)
             .ok_or(anyhow!("交易笔数不存在"))?
             .parse::<i64>()?;
 
-        let buy_size = record
-            .get(9)
-            .ok_or(anyhow!("买方成交量不存在"))?
-            .parse::<f64>()?
-            .to_safe();
+        let buy_size = Decimal::new(
+            record
+                .get(9)
+                .ok_or(anyhow!("买方成交量不存在"))?
+                .parse::<f64>()?,
+        );
 
-        let buy_cash = record
-            .get(10)
-            .ok_or(anyhow!("买方成交额不存在"))?
-            .parse::<f64>()?
-            .to_safe();
+        let buy_cash = Decimal::new(
+            record
+                .get(10)
+                .ok_or(anyhow!("买方成交额不存在"))?
+                .parse::<f64>()?,
+        );
 
         Ok(Self {
             symbol: Default::default(),
