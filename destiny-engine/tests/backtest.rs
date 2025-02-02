@@ -25,7 +25,7 @@ impl Strategy for BacktestStrategy {
 
     async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
         if !*self.is_buy.lock() {
-            engine.long_market_open(&self.symbol, 1.).await?;
+            engine.long_limit_open(&self.symbol, 1., 200.).await?;
             *self.is_buy.lock() = true;
         }
         let time = engine.time().str_ymd_hm();
