@@ -620,6 +620,7 @@ dependencies = [
  "anyhow",
  "destiny-engine",
  "pyo3",
+ "tokio",
 ]
 
 [[package]]

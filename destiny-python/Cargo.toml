@@ -16,3 +16,4 @@ crate-type = ["cdylib"]
 pyo3 = { workspace = true }
 destiny-engine = { workspace = true, features = ["python"] }
 anyhow = { workspace = true }
+tokio = { workspace = true }

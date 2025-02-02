@@ -27,20 +27,25 @@ def trace(*args):
 
 def debug(*args):
     """
-    打印debug级别的日志
+    打印`debug`级别的日志
     """
 
 def info(*args):
     """
-    打印info级别的日志
+    打印`info`级别的日志
     """
 
 def warn(*args):
     """
-    打印warn级别的日志
+    打印`warn`级别的日志
     """
 
 def error(*args):
     """
-    打印error级别的日志
+    打印`error`级别的日志
+    """
+
+def print(*args):
+    """
+    打印日志, 默认`debug`级别
     """
