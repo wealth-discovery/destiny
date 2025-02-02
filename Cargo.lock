@@ -620,6 +620,8 @@ dependencies = [
  "anyhow",
  "destiny-engine",
  "pyo3",
+ "rust_decimal",
+ "rust_decimal_macros",
  "tokio",
 ]
 

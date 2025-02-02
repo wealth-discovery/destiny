@@ -190,6 +190,7 @@ impl Order {
 }
 
 /// 持仓
+#[cfg_attr(feature = "python", pyo3::pyclass(get_all, frozen))]
 #[derive(Debug, Clone)]
 pub struct Position {
     /// 方向

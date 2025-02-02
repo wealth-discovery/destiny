@@ -1,4 +1,4 @@
-from typing import List, Literal
+from typing import List, Literal, Optional
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum, auto
@@ -149,11 +149,23 @@ class Order:
     create_time: datetime
     """创建时间"""
 
+class Position:
+    """
+    持仓
+    """
+
+    side: TradeSide
+    """方向"""
+    price: Decimal
+    """持仓均价"""
+    size: Decimal
+    """持仓"""
+
 class API:
     def time(self) -> datetime: ...
     def stop(self): ...
     def init_symbol(self, symbol: str): ...
-    def order(self, symbol: str, id: str) -> Order: ...
+    def order(self, symbol: str, id: str) -> Optional[Order]: ...
     def orders(self, symbol: str) -> List[Order]: ...
     def orders_long(self, symbol: str) -> List[Order]: ...
     def orders_long_open(self, symbol: str) -> List[Order]: ...

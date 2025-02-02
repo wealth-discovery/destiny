@@ -1,4 +1,3 @@
-use anyhow::Result;
 use destiny_engine::prelude::*;
 use pyo3::{prelude::*, types::PyTuple};
 
@@ -9,6 +8,7 @@ fn destiny(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<OrderStatus>()?;
     m.add_class::<Kline>()?;
     m.add_class::<Order>()?;
+    m.add_class::<Position>()?;
     m.add_class::<PythonEngine>()?;
     m.add_function(wrap_pyfunction!(init_log, m)?)?;
     m.add_function(wrap_pyfunction!(free_log, m)?)?;
@@ -18,6 +18,7 @@ fn destiny(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(log_warn, m)?)?;
     m.add_function(wrap_pyfunction!(log_error, m)?)?;
     m.add_function(wrap_pyfunction!(log_print, m)?)?;
+    m.add_function(wrap_pyfunction!(run_backtest, m)?)?;
     Ok(())
 }
 
@@ -74,7 +75,7 @@ fn free_log(log_collector: usize) {
     name="trace", 
     signature = (*args)
 )]
-pub fn log_trace(args: &Bound<'_, PyTuple>) {
+fn log_trace(args: &Bound<'_, PyTuple>) {
     trace!(
         "策略 : {}",
         args.iter()
@@ -89,7 +90,7 @@ pub fn log_trace(args: &Bound<'_, PyTuple>) {
     name="debug", 
     signature = (*args)
 )]
-pub fn log_debug(args: &Bound<'_, PyTuple>) {
+fn log_debug(args: &Bound<'_, PyTuple>) {
     debug!(
         "策略 : {}",
         args.iter()
@@ -104,7 +105,7 @@ pub fn log_debug(args: &Bound<'_, PyTuple>) {
     name="info", 
     signature = (*args)
 )]
-pub fn log_info(args: &Bound<'_, PyTuple>) {
+fn log_info(args: &Bound<'_, PyTuple>) {
     info!(
         "策略 : {}",
         args.iter()
@@ -119,7 +120,7 @@ pub fn log_info(args: &Bound<'_, PyTuple>) {
     name="warn", 
     signature = (*args)
 )]
-pub fn log_warn(args: &Bound<'_, PyTuple>) {
+fn log_warn(args: &Bound<'_, PyTuple>) {
     warn!(
         "策略 : {}",
         args.iter()
@@ -134,7 +135,7 @@ pub fn log_warn(args: &Bound<'_, PyTuple>) {
     name="error", 
     signature = (*args)
 )]
-pub fn log_error(args: &Bound<'_, PyTuple>) {
+fn log_error(args: &Bound<'_, PyTuple>) {
     error!(
         "策略 : {}",
         args.iter()
@@ -149,7 +150,7 @@ pub fn log_error(args: &Bound<'_, PyTuple>) {
     name="print", 
     signature = (*args)
 )]
-pub fn log_print(args: &Bound<'_, PyTuple>) {
+fn log_print(args: &Bound<'_, PyTuple>) {
     log_debug(args);
 }
 
@@ -467,35 +468,195 @@ impl PythonEngine {
     }
 }
 
-struct PythonStrategy {}
+struct PythonStrategy {
+    on_init: Option<Py<PyAny>>,
+    on_start: Option<Py<PyAny>>,
+    on_stop: Option<Py<PyAny>>,
+    on_daily: Option<Py<PyAny>>,
+    on_hourly: Option<Py<PyAny>>,
+    on_minutely: Option<Py<PyAny>>,
+    on_kline: Option<Py<PyAny>>,
+    on_order: Option<Py<PyAny>>,
+    on_position: Option<Py<PyAny>>,
+}
+
+impl PythonStrategy {
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        on_init: Option<Py<PyAny>>,
+        on_start: Option<Py<PyAny>>,
+        on_stop: Option<Py<PyAny>>,
+        on_daily: Option<Py<PyAny>>,
+        on_hourly: Option<Py<PyAny>>,
+        on_minutely: Option<Py<PyAny>>,
+        on_kline: Option<Py<PyAny>>,
+        on_order: Option<Py<PyAny>>,
+        on_position: Option<Py<PyAny>>,
+    ) -> Self {
+        Self {
+            on_init,
+            on_start,
+            on_stop,
+            on_daily,
+            on_hourly,
+            on_minutely,
+            on_kline,
+            on_order,
+            on_position,
+        }
+    }
+}
 
 #[async_trait]
 impl Strategy for PythonStrategy {
     async fn on_init(&self, engine: Arc<dyn Engine>) -> Result<()> {
+        if let Some(callback) = &self.on_init {
+            Python::with_gil(|py| {
+                callback.call1(py, (PythonEngine(engine),))?;
+                anyhow::Ok(())
+            })?;
+        }
         Ok(())
     }
     async fn on_start(&self, engine: Arc<dyn Engine>) -> Result<()> {
+        if let Some(callback) = &self.on_start {
+            Python::with_gil(|py| {
+                callback.call1(py, (PythonEngine(engine),))?;
+                anyhow::Ok(())
+            })?;
+        }
         Ok(())
     }
     async fn on_stop(&self, engine: Arc<dyn Engine>) -> Result<()> {
+        if let Some(callback) = &self.on_stop {
+            Python::with_gil(|py| {
+                callback.call1(py, (PythonEngine(engine),))?;
+                anyhow::Ok(())
+            })?;
+        }
         Ok(())
     }
     async fn on_daily(&self, engine: Arc<dyn Engine>) -> Result<()> {
+        if let Some(callback) = &self.on_daily {
+            Python::with_gil(|py| {
+                callback.call1(py, (PythonEngine(engine),))?;
+                anyhow::Ok(())
+            })?;
+        }
         Ok(())
     }
     async fn on_hourly(&self, engine: Arc<dyn Engine>) -> Result<()> {
+        if let Some(callback) = &self.on_hourly {
+            Python::with_gil(|py| {
+                callback.call1(py, (PythonEngine(engine),))?;
+                anyhow::Ok(())
+            })?;
+        }
         Ok(())
     }
     async fn on_minutely(&self, engine: Arc<dyn Engine>) -> Result<()> {
+        if let Some(callback) = &self.on_minutely {
+            Python::with_gil(|py| {
+                callback.call1(py, (PythonEngine(engine),))?;
+                anyhow::Ok(())
+            })?;
+        }
         Ok(())
     }
     async fn on_kline(&self, engine: Arc<dyn Engine>, kline: Kline) -> Result<()> {
+        if let Some(callback) = &self.on_kline {
+            Python::with_gil(|py| {
+                callback.call1(py, (PythonEngine(engine), kline))?;
+                anyhow::Ok(())
+            })?;
+        }
         Ok(())
     }
     async fn on_order(&self, engine: Arc<dyn Engine>, order: Order) -> Result<()> {
+        if let Some(callback) = &self.on_order {
+            Python::with_gil(|py| {
+                callback.call1(py, (PythonEngine(engine), order))?;
+                anyhow::Ok(())
+            })?;
+        }
         Ok(())
     }
     async fn on_position(&self, engine: Arc<dyn Engine>, position: Position) -> Result<()> {
+        if let Some(callback) = &self.on_position {
+            Python::with_gil(|py| {
+                callback.call1(py, (PythonEngine(engine), position))?;
+                anyhow::Ok(())
+            })?;
+        }
         Ok(())
     }
+}
+
+#[pyfunction]
+#[pyo3(
+    name="run_backtest", 
+    signature = (
+        begin,
+        end,
+        cash = dec!(1000),
+        fee_rate_taker = dec!(0.0005),
+        fee_rate_maker = dec!(0.0005),
+        slippage_rate = dec!(0.01),
+        on_init = None,
+        on_start = None,
+        on_stop = None,
+        on_daily = None,
+        on_hourly = None,
+        on_minutely = None,
+        on_kline = None,
+        on_order = None,
+        on_position = None,
+    )
+)]
+#[allow(clippy::too_many_arguments)]
+fn run_backtest(
+    py: Python<'_>,
+    begin: DateTime<Utc>,
+    end: DateTime<Utc>,
+    cash: Decimal,
+    fee_rate_taker: Decimal,
+    fee_rate_maker: Decimal,
+    slippage_rate: Decimal,
+    on_init: Option<Py<PyAny>>,
+    on_start: Option<Py<PyAny>>,
+    on_stop: Option<Py<PyAny>>,
+    on_daily: Option<Py<PyAny>>,
+    on_hourly: Option<Py<PyAny>>,
+    on_minutely: Option<Py<PyAny>>,
+    on_kline: Option<Py<PyAny>>,
+    on_order: Option<Py<PyAny>>,
+    on_position: Option<Py<PyAny>>,
+) -> Result<()> {
+    py.allow_threads(|| {
+        RUNTIME.block_on(async move {
+            Backtest::run(
+                BacktestConfigBuilder::default()
+                    .begin(begin)
+                    .end(end)
+                    .cash(cash)
+                    .fee_rate_taker(fee_rate_taker)
+                    .fee_rate_maker(fee_rate_maker)
+                    .slippage_rate(slippage_rate)
+                    .build()?,
+                Arc::new(PythonStrategy::new(
+                    on_init,
+                    on_start,
+                    on_stop,
+                    on_daily,
+                    on_hourly,
+                    on_minutely,
+                    on_kline,
+                    on_order,
+                    on_position,
+                )),
+            )
+            .await?;
+            anyhow::Ok(())
+        })
+    })
 }
