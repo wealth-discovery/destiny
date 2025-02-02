@@ -656,7 +656,6 @@ impl DecodeCsvRecord for Kline {
 
         Ok(Self {
             symbol: Default::default(),
-            interval: KlineInterval::M1,
             open_time,
             open,
             high,
@@ -667,7 +666,6 @@ impl DecodeCsvRecord for Kline {
             buy_size,
             buy_cash,
             trades,
-            time: Default::default(),
         })
     }
 }
