@@ -22,6 +22,7 @@ impl Strategy for BacktestStrategy {
         engine.symbol_init(&self.symbol)?;
         Ok(())
     }
+
     /*
     async fn on_daily(&self, engine: Arc<dyn Engine>) -> Result<()> {
         let time = engine.time().str_ymd();
@@ -30,6 +31,15 @@ impl Strategy for BacktestStrategy {
     }
     // */
 
+    //*
+    async fn on_kline(&self, engine: Arc<dyn Engine>, kline: Kline) -> Result<()> {
+        let time = engine.time().str_ymd();
+        info!("{time} {kline:?}");
+        return Ok(());
+    }
+    // */
+
+    //*
     async fn on_minutely(&self, engine: Arc<dyn Engine>) -> Result<()> {
         if !*self.is_buy.lock() {
             engine
@@ -45,6 +55,7 @@ impl Strategy for BacktestStrategy {
         info!("{time} 标记价({price_mark:.2}),可用资金({cash_available:.4}),保证金({margin:.4}),多仓({long_size:.4})");
         Ok(())
     }
+    // */
 }
 
 #[tokio::test(flavor = "multi_thread")]

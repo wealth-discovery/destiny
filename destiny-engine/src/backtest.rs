@@ -1181,7 +1181,7 @@ impl SymbolHistoryData {
         date: DateTime<Utc>,
     ) -> Result<()> {
         let history_data = self.0.get_mut(symbol).unwrap();
-        if let Some(kline) = history_data
+        if let Some(mut kline) = history_data
             .klines
             .take(date - Duration::minutes(1))
             .await?
@@ -1198,6 +1198,7 @@ impl SymbolHistoryData {
 
             backtest.cross_order(symbol).await?;
 
+            kline.symbol = symbol.to_owned();
             backtest.strategy.on_kline(backtest.clone(), kline).await?;
         }
 
