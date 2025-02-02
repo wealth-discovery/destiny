@@ -70,7 +70,7 @@ fn free_log(log_collector: usize) {
 )]
 pub fn log_trace(args: &Bound<'_, PyTuple>) {
     trace!(
-        "{}",
+        "策略 : {}",
         args.iter()
             .map(|arg| arg.to_string())
             .collect::<Vec<String>>()
@@ -85,7 +85,7 @@ pub fn log_trace(args: &Bound<'_, PyTuple>) {
 )]
 pub fn log_debug(args: &Bound<'_, PyTuple>) {
     debug!(
-        "{}",
+        "策略 : {}",
         args.iter()
             .map(|arg| arg.to_string())
             .collect::<Vec<String>>()
@@ -100,7 +100,7 @@ pub fn log_debug(args: &Bound<'_, PyTuple>) {
 )]
 pub fn log_info(args: &Bound<'_, PyTuple>) {
     info!(
-        "{}",
+        "策略 : {}",
         args.iter()
             .map(|arg| arg.to_string())
             .collect::<Vec<String>>()
@@ -115,7 +115,7 @@ pub fn log_info(args: &Bound<'_, PyTuple>) {
 )]
 pub fn log_warn(args: &Bound<'_, PyTuple>) {
     warn!(
-        "{}",
+        "策略 : {}",
         args.iter()
             .map(|arg| arg.to_string())
             .collect::<Vec<String>>()
@@ -130,7 +130,7 @@ pub fn log_warn(args: &Bound<'_, PyTuple>) {
 )]
 pub fn log_error(args: &Bound<'_, PyTuple>) {
     error!(
-        "{}",
+        "策略 : {}",
         args.iter()
             .map(|arg| arg.to_string())
             .collect::<Vec<String>>()

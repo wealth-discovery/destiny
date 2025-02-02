@@ -1,7 +1,9 @@
 from destiny import *
 
 
-log_collector = init_log(show_std=True, level="trace")
-debug("debug", "123")
-free_log(log_collector)
+init_log(show_std=True, save_file=True, level="trace")
+trace("trace")
 debug("debug")
+info("info")
+warn("warn")
+error("error")
