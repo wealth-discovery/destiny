@@ -27,6 +27,8 @@ jobs:
           sccache: 'true'
           manylinux: auto
           rust-toolchain: nightly
+          before-script-linux: |
+            cargo tree
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -53,6 +55,8 @@ jobs:
           sccache: 'true'
           manylinux: musllinux_1_2
           rust-toolchain: nightly
+          before-script-linux: |
+            cargo tree
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
