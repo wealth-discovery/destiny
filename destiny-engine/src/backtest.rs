@@ -1195,6 +1195,7 @@ impl SymbolHistoryData {
                 .symbol
                 .market
                 .last = kline.close;
+
             backtest.cross_order(symbol).await?;
 
             backtest.strategy.on_kline(backtest.clone(), kline).await?;
@@ -1234,9 +1235,17 @@ impl SymbolHistoryData {
             .take(date - Duration::minutes(1))
             .await?
         {
-            let mut account = backtest.account.lock();
-            let symbol_position = account.positions.get_mut(symbol).unwrap();
-            symbol_position.symbol.market.mark = kline.close;
+            backtest
+                .account
+                .lock()
+                .positions
+                .get_mut(symbol)
+                .unwrap()
+                .symbol
+                .market
+                .mark = kline.close;
+
+            backtest.liquidate(symbol).await?;
         }
         Ok(())
     }
@@ -1250,10 +1259,10 @@ impl SymbolHistoryData {
         for symbol in symbols {
             self.flush_market_settlement_price(backtest, symbol, date)
                 .await?;
-            self.flush_market_last_price(backtest, symbol, date).await?;
+            self.flush_market_mark_price(backtest, symbol, date).await?;
             self.flush_market_index_price(backtest, symbol, date)
                 .await?;
-            self.flush_market_mark_price(backtest, symbol, date).await?;
+            self.flush_market_last_price(backtest, symbol, date).await?;
         }
         Ok(())
     }
@@ -1390,6 +1399,20 @@ impl Backtest {
         Ok(())
     }
 
+    async fn on_order(self: &Arc<Self>, order: Order) -> Result<()> {
+        let instant = Instant::now();
+        if let Err(err) = self.strategy.on_order(self.clone(), order).await {
+            tracing::error!("{} 订单事件失败: {}", self.time().str_ymd_hm(), err);
+        } else {
+            tracing::debug!(
+                "{} 订单事件执行耗时: {:?}",
+                self.time().str_ymd_hm(),
+                instant.elapsed()
+            );
+        }
+        Ok(())
+    }
+
     async fn on_minutely(self: &Arc<Self>, time: DateTime<Utc>) -> Result<()> {
         let instant = Instant::now();
         if let Err(err) = self.strategy.on_minutely(self.clone()).await {
@@ -1410,6 +1433,76 @@ impl Backtest {
     }
 
     async fn cross_order(self: &Arc<Self>, symbol: &str) -> Result<()> {
+        let orders = {
+            let price_last = self.price_last(symbol);
+            let mut account = self.account.lock();
+            let positions = account.positions.get_mut(symbol).unwrap();
+            let mut fee = Decimal::ZERO;
+            let mut profit = Decimal::ZERO;
+
+            let cross_order_ids = positions
+                .orders
+                .par_iter_mut()
+                .filter_map(|(id, order)| {
+                    let corss = match order.r#type {
+                        TradeType::Limit => match order.side {
+                            TradeSide::Long => {
+                                if order.reduce_only {
+                                    order.price <= price_last
+                                } else {
+                                    order.price >= price_last
+                                }
+                            }
+                            TradeSide::Short => {
+                                if order.reduce_only {
+                                    order.price >= price_last
+                                } else {
+                                    order.price <= price_last
+                                }
+                            }
+                        },
+                        TradeType::Market => true,
+                    };
+                    if corss {
+                        Some(id.to_owned())
+                    } else {
+                        if order.status == OrderStatus::Created {
+                            order.status = OrderStatus::Submitted;
+                        }
+                        None
+                    }
+                })
+                .collect::<Vec<String>>();
+
+            let mut cross_orders = Vec::with_capacity(cross_order_ids.len());
+            for id in cross_order_ids {
+                let order = positions.orders.remove(&id).unwrap();
+                fee += order.size
+                    * price_last
+                    * if order.status == OrderStatus::Created {
+                        self.config.fee_rate_taker
+                    } else {
+                        self.config.fee_rate_maker
+                    };
+                if order.reduce_only {
+                    profit += match order.side {
+                        TradeSide::Long => (price_last - positions.long.price) * order.size,
+                        TradeSide::Short => (positions.short.price - price_last) * order.size,
+                    };
+                }
+                cross_orders.push(order);
+            }
+            cross_orders
+        };
+
+        for order in orders {
+            self.on_order(order).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn liquidate(self: &Arc<Self>, symbol: &str) -> Result<()> {
         Ok(())
     }
 }
