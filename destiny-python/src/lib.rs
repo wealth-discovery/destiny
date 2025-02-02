@@ -1,11 +1,14 @@
 use anyhow::Result;
 use destiny_engine::prelude::*;
 use pyo3::{prelude::*, types::PyTuple};
-use tokio::task::block_in_place;
 
 #[pymodule]
 fn destiny(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<TradeType>()?;
+    m.add_class::<TradeSide>()?;
+    m.add_class::<OrderStatus>()?;
     m.add_class::<Kline>()?;
+    m.add_class::<Order>()?;
     m.add_class::<PythonEngine>()?;
     m.add_function(wrap_pyfunction!(init_log, m)?)?;
     m.add_function(wrap_pyfunction!(free_log, m)?)?;
@@ -150,7 +153,7 @@ pub fn log_print(args: &Bound<'_, PyTuple>) {
     log_debug(args);
 }
 
-#[pyclass(frozen)]
+#[pyclass(name = "API", frozen)]
 struct PythonEngine(Arc<dyn Engine>);
 
 #[pymethods]
