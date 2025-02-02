@@ -583,6 +583,7 @@ dependencies = [
  "destiny-types",
  "futures",
  "parking_lot",
+ "pyo3",
  "rayon",
  "reqwest",
  "rust_decimal",
@@ -624,6 +625,7 @@ version = "1.0.0"
 dependencies = [
  "chrono",
  "destiny-helpers",
+ "pyo3",
  "rayon",
  "rust_decimal",
  "serde",

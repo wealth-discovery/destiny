@@ -14,4 +14,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { workspace = true }
-destiny-engine = { workspace = true }
+destiny-engine = { workspace = true, features = ["python"] }
