@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Callable
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum, auto
@@ -217,3 +217,44 @@ class API:
     def order_close(self, symbol: str, id: str): ...
     def order_cancel_many(self, symbol: str, ids: List[str]): ...
     def leverage_set(self, symbol: str, leverage: int): ...
+
+BasicCallback = Callable[[API], None]
+KlineCallback = Callable[[API, Kline], None]
+OrderCallback = Callable[[API, Order], None]
+PositionCallback = Callable[[API, Position], None]
+
+def run_backtest(
+    begin: datetime,
+    end: datetime,
+    cash: Decimal = Decimal("1000"),
+    fee_rate_taker: Decimal = Decimal("0.0005"),
+    fee_rate_maker: Decimal = Decimal("0.0005"),
+    slippage_rate: Decimal = Decimal("0.01"),
+    on_init: Optional[BasicCallback] = None,
+    on_start: Optional[BasicCallback] = None,
+    on_stop: Optional[BasicCallback] = None,
+    on_daily: Optional[BasicCallback] = None,
+    on_hourly: Optional[BasicCallback] = None,
+    on_minutely: Optional[BasicCallback] = None,
+    on_kline: Optional[KlineCallback] = None,
+    on_order: Optional[OrderCallback] = None,
+    on_position: Optional[PositionCallback] = None,
+):
+    """
+    运行回测
+    [`begin`] : 开始时间
+    [`end`] : 结束时间
+    [`cash`] : 初始资金
+    [`fee_rate_taker`] : 吃单手续费
+    [`fee_rate_maker`] : 挂单手续费
+    [`slippage_rate`] : 滑点
+    [`on_init`] : 初始化回调
+    [`on_start`] : 开始回调
+    [`on_stop`] : 停止回调
+    [`on_daily`] : 每日回调
+    [`on_hourly`] : 每小时回调
+    [`on_minutely`] : 每分钟回调
+    [`on_kline`] : K线回调
+    [`on_order`] : 订单回调
+    [`on_position`] : 持仓回调
+    """
