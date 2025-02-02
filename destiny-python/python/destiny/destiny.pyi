@@ -248,13 +248,13 @@ def run_backtest(
     [`fee_rate_taker`] : 吃单手续费
     [`fee_rate_maker`] : 挂单手续费
     [`slippage_rate`] : 滑点
-    [`on_init`] : 初始化回调
-    [`on_start`] : 开始回调
-    [`on_stop`] : 停止回调
-    [`on_daily`] : 每日回调
-    [`on_hourly`] : 每小时回调
-    [`on_minutely`] : 每分钟回调
-    [`on_kline`] : K线回调
-    [`on_order`] : 订单回调
-    [`on_position`] : 持仓回调
+    [`on_init`] : 初始化事件
+    [`on_start`] : 开始事件
+    [`on_stop`] : 停止事件
+    [`on_daily`] : 每日事件
+    [`on_hourly`] : 每小时事件
+    [`on_minutely`] : 每分钟事件
+    [`on_kline`] : K线事件
+    [`on_order`] : 订单事件
+    [`on_position`] : 持仓事件
     """
