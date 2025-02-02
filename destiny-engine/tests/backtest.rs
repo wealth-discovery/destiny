@@ -23,7 +23,7 @@ impl Strategy for BacktestStrategy {
         Ok(())
     }
 
-    async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
+    async fn on_minutely(&self, engine: Arc<dyn Engine>) -> Result<()> {
         if !*self.is_buy.lock() {
             engine.long_limit_open(&self.symbol, 1., 200.).await?;
             *self.is_buy.lock() = true;

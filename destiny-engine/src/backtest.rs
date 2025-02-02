@@ -36,6 +36,7 @@ pub struct Backtest {
     config: Arc<BacktestConfig>,
     account: Arc<Mutex<Account>>,
     trade_time: Arc<Mutex<DateTime<Utc>>>,
+    strategy: Arc<dyn Strategy>,
 }
 
 impl Engine for Backtest {
@@ -1130,7 +1131,7 @@ impl SymbolHistoryData {
 
     async fn flush_market_settlement_price(
         &mut self,
-        backtest: &Backtest,
+        backtest: &Arc<Backtest>,
         symbol: &str,
         date: DateTime<Utc>,
     ) -> Result<()> {
@@ -1146,22 +1147,36 @@ impl SymbolHistoryData {
 
     async fn flush_market_last_price(
         &mut self,
-        backtest: &Backtest,
+        backtest: &Arc<Backtest>,
         symbol: &str,
         date: DateTime<Utc>,
     ) -> Result<()> {
         let history_data = self.0.get_mut(symbol).unwrap();
-        if let Some(kline) = history_data.klines.take(date).await? {
-            let mut account = backtest.account.lock();
-            let symbol_position = account.positions.get_mut(symbol).unwrap();
-            symbol_position.symbol.market.last = kline.open;
+        if let Some(kline) = history_data
+            .klines
+            .take(date - Duration::minutes(1))
+            .await?
+        {
+            backtest
+                .account
+                .lock()
+                .positions
+                .get_mut(symbol)
+                .unwrap()
+                .symbol
+                .market
+                .last = kline.close;
+            backtest.cross_order(symbol).await?;
+
+            backtest.strategy.on_kline(backtest.clone(), kline).await?;
         }
+
         Ok(())
     }
 
     async fn flush_market_index_price(
         &mut self,
-        backtest: &Backtest,
+        backtest: &Arc<Backtest>,
         symbol: &str,
         date: DateTime<Utc>,
     ) -> Result<()> {
@@ -1176,7 +1191,7 @@ impl SymbolHistoryData {
 
     async fn flush_market_mark_price(
         &mut self,
-        backtest: &Backtest,
+        backtest: &Arc<Backtest>,
         symbol: &str,
         date: DateTime<Utc>,
     ) -> Result<()> {
@@ -1191,7 +1206,7 @@ impl SymbolHistoryData {
 
     pub async fn flush_market(
         &mut self,
-        backtest: &Backtest,
+        backtest: &Arc<Backtest>,
         symbols: &[String],
         date: DateTime<Utc>,
     ) -> Result<()> {
@@ -1208,7 +1223,7 @@ impl SymbolHistoryData {
 }
 
 impl Backtest {
-    fn new(mut config: BacktestConfig) -> Result<Arc<Backtest>> {
+    fn new(mut config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<Arc<Backtest>> {
         config.begin = config.begin.truncate_minute()?;
         config.end = config.end.truncate_minute()?;
         ensure!(config.begin < config.end, "开始时间必须小于结束时间");
@@ -1234,20 +1249,22 @@ impl Backtest {
             config,
             account,
             trade_time,
+            strategy,
         }))
     }
 
     pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<()> {
-        let backtest = Self::new(config)?;
+        Self::new(config, strategy)?.run0().await
+    }
+}
 
-        strategy.on_init(backtest.clone()).await?;
+impl Backtest {
+    pub async fn run0(self: &Arc<Self>) -> Result<()> {
+        self.strategy.on_init(self.clone()).await?;
 
-        ensure!(
-            !backtest.account.lock().positions.is_empty(),
-            "未初始化交易对"
-        );
+        ensure!(!self.account.lock().positions.is_empty(), "未初始化交易对");
 
-        let symbols = backtest
+        let symbols = self
             .account
             .lock()
             .positions
@@ -1255,83 +1272,92 @@ impl Backtest {
             .cloned()
             .collect::<Vec<String>>();
 
-        strategy.on_start(backtest.clone()).await?;
+        self.strategy.on_start(self.clone()).await?;
 
-        let mut begin = backtest.config.begin;
-        let end = backtest.config.end;
+        let mut begin = self.config.begin;
+        let end = self.config.end;
 
         let mut symbol_history_data = SymbolHistoryData::new(&symbols, begin, end);
 
         let backtest_instant = Instant::now();
 
         while begin <= end {
-            *backtest.trade_time.lock() = begin;
+            *self.trade_time.lock() = begin;
 
-            // 更新市场行情
             symbol_history_data
-                .flush_market(&backtest, &symbols, begin)
+                .flush_market(self, &symbols, begin)
                 .await?;
 
-            // 每日事件
-            if begin.hour() == 0 && begin.minute() == 0 {
-                let event_instant = Instant::now();
-                if let Err(err) = strategy.on_daily(backtest.clone()).await {
-                    tracing::error!("{} 每日事件执行失败: {}", begin.str_ymd_hm(), err);
-                } else {
-                    tracing::debug!(
-                        "{} 每日事件执行耗时: {:?}",
-                        begin.str_ymd_hm(),
-                        event_instant.elapsed()
-                    );
-                }
-            }
-            // 每小时事件
-            if begin.minute() == 0 {
-                let event_instant = Instant::now();
-                if let Err(err) = strategy.on_hourly(backtest.clone()).await {
-                    tracing::error!("{} 每小时事件执行失败: {}", begin.str_ymd_hm(), err);
-                } else {
-                    tracing::debug!(
-                        "{} 每小时事件执行耗时: {:?}",
-                        begin.str_ymd_hm(),
-                        event_instant.elapsed()
-                    );
-                }
-            }
-            // 每分钟事件
-            {
-                let event_instant = Instant::now();
-                if let Err(err) = strategy.on_minutely(backtest.clone()).await {
-                    tracing::error!("{} 每分钟事件执行失败: {}", begin.str_ymd_hm(), err);
-                } else {
-                    tracing::debug!(
-                        "{} 每分钟事件执行耗时: {:?}",
-                        begin.str_ymd_hm(),
-                        event_instant.elapsed()
-                    );
-                }
-            }
-            // Tick事件
-            {
-                let event_instant = Instant::now();
-                if let Err(err) = strategy.on_tick(backtest.clone()).await {
-                    tracing::error!("{} Tick事件执行失败: {}", begin.str_ymd_hm(), err);
-                } else {
-                    tracing::debug!(
-                        "{} Tick事件执行耗时: {:?}",
-                        begin.str_ymd_hm(),
-                        event_instant.elapsed()
-                    );
-                }
-            }
+            self.on_daily(begin).await?;
+            self.on_hourly(begin).await?;
+            self.on_minutely(begin).await?;
 
             begin += Duration::minutes(1);
         }
 
         tracing::debug!("回测耗时: {:?}", backtest_instant.elapsed());
 
-        strategy.on_stop(backtest.clone()).await?;
+        self.on_stop().await?;
 
+        Ok(())
+    }
+}
+
+impl Backtest {
+    async fn on_daily(self: &Arc<Self>, time: DateTime<Utc>) -> Result<()> {
+        if !(time.hour() == 0 && time.minute() == 0) {
+            return Ok(());
+        }
+        let instant = Instant::now();
+        if let Err(err) = self.strategy.on_daily(self.clone()).await {
+            tracing::error!("{} 每日事件执行失败: {}", time.str_ymd_hm(), err);
+        } else {
+            tracing::debug!(
+                "{} 每日事件执行耗时: {:?}",
+                time.str_ymd_hm(),
+                instant.elapsed()
+            );
+        }
+        Ok(())
+    }
+
+    async fn on_hourly(self: &Arc<Self>, time: DateTime<Utc>) -> Result<()> {
+        if time.minute() != 0 {
+            return Ok(());
+        }
+        let instant = Instant::now();
+        if let Err(err) = self.strategy.on_hourly(self.clone()).await {
+            tracing::error!("{} 每小时事件执行失败: {}", time.str_ymd_hm(), err);
+        } else {
+            tracing::debug!(
+                "{} 每小时事件执行耗时: {:?}",
+                time.str_ymd_hm(),
+                instant.elapsed()
+            );
+        }
+        Ok(())
+    }
+
+    async fn on_minutely(self: &Arc<Self>, time: DateTime<Utc>) -> Result<()> {
+        let instant = Instant::now();
+        if let Err(err) = self.strategy.on_minutely(self.clone()).await {
+            tracing::error!("{} 每分钟事件执行失败: {}", time.str_ymd_hm(), err);
+        } else {
+            tracing::debug!(
+                "{} 每分钟事件执行耗时: {:?}",
+                time.str_ymd_hm(),
+                instant.elapsed()
+            );
+        }
+        Ok(())
+    }
+
+    async fn on_stop(self: &Arc<Self>) -> Result<()> {
+        self.strategy.on_stop(self.clone()).await?;
+        Ok(())
+    }
+
+    async fn cross_order(self: &Arc<Self>, symbol: &str) -> Result<()> {
         Ok(())
     }
 }

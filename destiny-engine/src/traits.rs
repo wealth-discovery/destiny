@@ -97,12 +97,6 @@ pub trait Strategy: Send + Sync {
     async fn on_minutely(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-    async fn on_secondly(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        Ok(())
-    }
-    async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        Ok(())
-    }
     async fn on_kline(&self, engine: Arc<dyn Engine>, kline: Kline) -> Result<()> {
         Ok(())
     }
