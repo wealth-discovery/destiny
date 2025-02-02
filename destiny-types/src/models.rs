@@ -181,7 +181,14 @@ impl Order {
         if self.reduce_only {
             return 0.;
         }
-        ((self.size - self.deal_size) * mark_price / leverage as f64).to_safe()
+        ((self.size - self.deal_size)
+            * if self.r#type == TradeType::Limit {
+                self.price
+            } else {
+                mark_price
+            }
+            / leverage as f64)
+            .to_safe()
     }
 }
 
