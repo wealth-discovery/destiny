@@ -79,58 +79,37 @@ pub trait EngineExchange: Send + Sync {
 #[async_trait]
 #[allow(unused_variables)]
 pub trait Strategy: Send + Sync {
-    /// 初始化事件
     async fn on_init(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// 开始事件
     async fn on_start(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// 停止事件
     async fn on_stop(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// 每日事件
     async fn on_daily(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// 每小时事件
     async fn on_hourly(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// 每分钟事件
     async fn on_minutely(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// 每秒事件
     async fn on_secondly(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// Tick事件
     async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// 订单事件
-    async fn on_order(&self, engine: Arc<dyn Engine>) -> Result<()> {
+    async fn on_kline(&self, engine: Arc<dyn Engine>, kline: Kline) -> Result<()> {
         Ok(())
     }
-
-    /// 市场行情变化事件
-    async fn on_market(&self, engine: Arc<dyn Engine>) -> Result<()> {
+    async fn on_order(&self, engine: Arc<dyn Engine>, order: Order) -> Result<()> {
         Ok(())
     }
-
-    /// 账户变化事件
-    async fn on_account(&self, engine: Arc<dyn Engine>) -> Result<()> {
+    async fn on_position(&self, engine: Arc<dyn Engine>, position: Position) -> Result<()> {
         Ok(())
     }
 }
