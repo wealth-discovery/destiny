@@ -31,4 +31,4 @@ pyo3 = { workspace = true, optional = true }
 
 [features]
 default = []
-python = ["dep:pyo3", "destiny-types/python"]
+python = ["dep:pyo3", "destiny-helpers/python", "destiny-types/python"]

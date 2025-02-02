@@ -20,3 +20,8 @@ tracing-subscriber = { workspace = true }
 derive_builder = { workspace = true }
 tokio = { workspace = true }
 nu-ansi-term = { workspace = true }
+pyo3 = { workspace = true, optional = true }
+
+[features]
+default = []
+python = ["dep:pyo3"]

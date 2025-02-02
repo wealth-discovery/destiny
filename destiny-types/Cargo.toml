@@ -19,4 +19,4 @@ pyo3 = { workspace = true, optional = true }
 
 [features]
 default = []
-python = ["dep:pyo3"]
+python = ["dep:pyo3", "destiny-helpers/python"]

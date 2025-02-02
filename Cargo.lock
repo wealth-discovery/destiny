@@ -603,6 +603,7 @@ dependencies = [
  "derive_builder",
  "homedir",
  "nu-ansi-term 0.50.1",
+ "pyo3",
  "sqlx",
  "tokio",
  "tracing",

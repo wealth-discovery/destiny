@@ -14,6 +14,7 @@ use tracing_subscriber::{layer::SubscriberExt, Layer};
 pub type LogLevel = LevelFilter;
 
 /// 日志配置
+#[cfg_attr(feature = "python", pyo3::pyclass)]
 #[derive(Builder)]
 #[builder(setter(into))]
 pub struct LogConfig {
@@ -29,6 +30,50 @@ pub struct LogConfig {
     /// 日志级别
     #[builder(default = LogLevel::INFO)]
     pub level: LogLevel,
+}
+
+#[cfg_attr(feature = "python", pyo3::pymethods)]
+impl LogConfig {
+    #[new]
+    fn py_new() -> Self {
+        Self {
+            show_std: true,
+            save_file: true,
+            targets: vec![],
+            level: LogLevel::INFO,
+        }
+    }
+
+    #[pyo3(signature = (value))]
+    fn show_std(mut slf: pyo3::PyRefMut<'_, Self>, value: bool) -> pyo3::PyRefMut<'_, Self> {
+        slf.show_std = value;
+        slf
+    }
+
+    #[pyo3(signature = (value))]
+    fn save_file(mut slf: pyo3::PyRefMut<'_, Self>, value: bool) -> pyo3::PyRefMut<'_, Self> {
+        slf.save_file = value;
+        slf
+    }
+
+    #[pyo3(signature = (target))]
+    fn target_add(mut slf: pyo3::PyRefMut<'_, Self>, target: String) -> pyo3::PyRefMut<'_, Self> {
+        slf.targets.push(target);
+        slf
+    }
+
+    #[pyo3(signature = (level))]
+    fn level<'a>(mut slf: pyo3::PyRefMut<'a, Self>, level: &'a str) -> pyo3::PyRefMut<'a, Self> {
+        match level {
+            "trace" => slf.level = LogLevel::TRACE,
+            "debug" => slf.level = LogLevel::DEBUG,
+            "info" => slf.level = LogLevel::INFO,
+            "warn" => slf.level = LogLevel::WARN,
+            "error" => slf.level = LogLevel::ERROR,
+            _ => slf.level = LogLevel::INFO,
+        }
+        slf
+    }
 }
 
 struct LogVisitor(Option<String>);
