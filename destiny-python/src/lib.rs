@@ -1,9 +1,6 @@
 use anyhow::Result;
 use destiny_engine::prelude::*;
-use pyo3::{
-    prelude::*,
-    types::{PyCapsule, PyTuple},
-};
+use pyo3::{prelude::*, types::PyTuple};
 
 #[pymodule]
 fn destiny(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -28,13 +25,7 @@ fn destiny(m: &Bound<'_, PyModule>) -> PyResult<()> {
         level = "info"
     )
 )]
-fn init_log(
-    py: Python<'_>,
-    show_std: bool,
-    save_file: bool,
-    targets: Vec<String>,
-    level: &str,
-) -> Result<Py<PyCapsule>> {
+fn init_log(show_std: bool, save_file: bool, targets: Vec<String>, level: &str) -> Result<usize> {
     let log_collector = LogConfigBuilder::default()
         .show_std(show_std)
         .save_file(save_file)
@@ -55,7 +46,7 @@ fn init_log(
         LOGO, AUTHOR, VERSION, REPOSITORY
     );
 
-    Ok(PyCapsule::new(py, log_collector, None)?.unbind())
+    Ok(Box::into_raw(Box::new(log_collector)) as usize)
 }
 
 #[pyfunction]
@@ -63,12 +54,12 @@ fn init_log(
     name = "free_log",
     signature = (log_collector)
 )]
-fn free_log(log_collector: Bound<PyCapsule>) {
-    let ptr = log_collector.pointer();
+fn free_log(log_collector: usize) {
+    let ptr = log_collector as *mut LogCollector;
     if ptr.is_null() {
         return;
     }
-    let log_collector = unsafe { Box::from_raw(ptr as *mut LogCollector) };
+    let log_collector = unsafe { Box::from_raw(ptr) };
     log_collector.done();
 }
 

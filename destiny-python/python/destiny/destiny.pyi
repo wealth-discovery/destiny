@@ -5,7 +5,7 @@ def init_log(
     save_file: bool = False,
     targets: List[str] = [],
     level: Literal["trace", "debug", "info", "warn", "error"] = "info",
-) -> any:
+) -> int:
     """
     初始化日志, 返回一个日志收集器
     [`show_std`] : 是否显示标准输出
@@ -14,7 +14,7 @@ def init_log(
     [`level`] : 日志级别
     """
 
-def free_log(log_collector: any):
+def free_log(log_collector: int):
     """
     释放日志收集器
     [`log_collector`] : 日志收集器
