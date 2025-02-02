@@ -4,7 +4,7 @@ resolver = "2"
 
 [workspace.package]
 version = "1.0.0"
-authors = ["<Husky> <husky@wealths.app"]
+authors = ["<Husky> <husky.robot.dog@gmail.com>"]
 description = "天命量化库"
 edition = "2021"
 license-file = "LICENSE"
@@ -64,3 +64,5 @@ csv-async = { version = "1.3", features = ["tokio"] }
 async_zip = { version = "0.0.17", features = ["full"] }
 parking_lot = { version = "0.12" }
 nu-ansi-term = { version = "0.50" }
+rust_decimal = { version = "1.36" }
+rust_decimal_macros = { version = "1.36" }

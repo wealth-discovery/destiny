@@ -2,6 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use destiny_types::prelude::*;
+use rust_decimal::Decimal;
 use std::sync::Arc;
 
 pub trait Engine: EngineInit + EngineAccount + EngineMarket + EngineExchange + Send + Sync {
@@ -23,53 +24,60 @@ pub trait EngineAccount: Send + Sync {
     fn orders_short_open(&self, symbol: &str) -> Vec<Order>;
     fn orders_short_close(&self, symbol: &str) -> Vec<Order>;
     fn leverage(&self, symbol: &str) -> u32;
-    fn cash(&self) -> f64;
-    fn cash_available(&self) -> f64;
-    fn cash_frozen(&self) -> f64;
-    fn margin(&self) -> f64;
-    fn pnl(&self) -> f64;
-    fn long_price(&self, symbol: &str) -> f64;
-    fn long_size(&self, symbol: &str) -> f64;
-    fn long_size_available(&self, symbol: &str) -> f64;
-    fn long_size_frozen(&self, symbol: &str) -> f64;
-    fn long_margin(&self, symbol: &str) -> f64;
-    fn long_pnl(&self, symbol: &str) -> f64;
-    fn short_price(&self, symbol: &str) -> f64;
-    fn short_size(&self, symbol: &str) -> f64;
-    fn short_size_available(&self, symbol: &str) -> f64;
-    fn short_size_frozen(&self, symbol: &str) -> f64;
-    fn short_margin(&self, symbol: &str) -> f64;
-    fn short_pnl(&self, symbol: &str) -> f64;
-    fn symbol_pnl(&self, symbol: &str) -> f64;
-    fn symbol_margin(&self, symbol: &str) -> f64;
+    fn cash(&self) -> Decimal;
+    fn cash_available(&self) -> Decimal;
+    fn cash_frozen(&self) -> Decimal;
+    fn margin(&self) -> Decimal;
+    fn pnl(&self) -> Decimal;
+    fn long_price(&self, symbol: &str) -> Decimal;
+    fn long_size(&self, symbol: &str) -> Decimal;
+    fn long_size_available(&self, symbol: &str) -> Decimal;
+    fn long_size_frozen(&self, symbol: &str) -> Decimal;
+    fn long_margin(&self, symbol: &str) -> Decimal;
+    fn long_pnl(&self, symbol: &str) -> Decimal;
+    fn short_price(&self, symbol: &str) -> Decimal;
+    fn short_size(&self, symbol: &str) -> Decimal;
+    fn short_size_available(&self, symbol: &str) -> Decimal;
+    fn short_size_frozen(&self, symbol: &str) -> Decimal;
+    fn short_margin(&self, symbol: &str) -> Decimal;
+    fn short_pnl(&self, symbol: &str) -> Decimal;
+    fn symbol_pnl(&self, symbol: &str) -> Decimal;
+    fn symbol_margin(&self, symbol: &str) -> Decimal;
 }
 
 pub trait EngineMarket: Send + Sync {
-    fn price_mark(&self, symbol: &str) -> f64;
-    fn price_last(&self, symbol: &str) -> f64;
-    fn price_index(&self, symbol: &str) -> f64;
-    fn price_settlement(&self, symbol: &str) -> f64;
+    fn price_mark(&self, symbol: &str) -> Decimal;
+    fn price_last(&self, symbol: &str) -> Decimal;
+    fn price_index(&self, symbol: &str) -> Decimal;
+    fn price_settlement(&self, symbol: &str) -> Decimal;
     fn time_settlement(&self, symbol: &str) -> DateTime<Utc>;
-    fn rule_price_min(&self, symbol: &str) -> f64;
-    fn rule_price_max(&self, symbol: &str) -> f64;
-    fn rule_price_tick(&self, symbol: &str) -> f64;
-    fn rule_size_min(&self, symbol: &str) -> f64;
-    fn rule_size_max(&self, symbol: &str) -> f64;
-    fn rule_size_tick(&self, symbol: &str) -> f64;
-    fn rule_amount_min(&self, symbol: &str) -> f64;
+    fn rule_price_min(&self, symbol: &str) -> Decimal;
+    fn rule_price_max(&self, symbol: &str) -> Decimal;
+    fn rule_price_tick(&self, symbol: &str) -> Decimal;
+    fn rule_size_min(&self, symbol: &str) -> Decimal;
+    fn rule_size_max(&self, symbol: &str) -> Decimal;
+    fn rule_size_tick(&self, symbol: &str) -> Decimal;
+    fn rule_amount_min(&self, symbol: &str) -> Decimal;
     fn rule_order_max(&self, symbol: &str) -> i64;
 }
 
 #[async_trait]
 pub trait EngineExchange: Send + Sync {
-    async fn long_market_open(&self, symbol: &str, size: f64) -> Result<String>;
-    async fn long_limit_open(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
-    async fn long_market_close(&self, symbol: &str, size: f64) -> Result<String>;
-    async fn long_limit_close(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
-    async fn short_market_open(&self, symbol: &str, size: f64) -> Result<String>;
-    async fn short_limit_open(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
-    async fn short_market_close(&self, symbol: &str, size: f64) -> Result<String>;
-    async fn short_limit_close(&self, symbol: &str, size: f64, price: f64) -> Result<String>;
+    async fn long_market_open(&self, symbol: &str, size: Decimal) -> Result<String>;
+    async fn long_limit_open(&self, symbol: &str, size: Decimal, price: Decimal) -> Result<String>;
+    async fn long_market_close(&self, symbol: &str, size: Decimal) -> Result<String>;
+    async fn long_limit_close(&self, symbol: &str, size: Decimal, price: Decimal)
+        -> Result<String>;
+    async fn short_market_open(&self, symbol: &str, size: Decimal) -> Result<String>;
+    async fn short_limit_open(&self, symbol: &str, size: Decimal, price: Decimal)
+        -> Result<String>;
+    async fn short_market_close(&self, symbol: &str, size: Decimal) -> Result<String>;
+    async fn short_limit_close(
+        &self,
+        symbol: &str,
+        size: Decimal,
+        price: Decimal,
+    ) -> Result<String>;
     async fn order_close(&self, symbol: &str, id: &str) -> Result<()>;
     async fn order_cancel_many(&self, symbol: &str, ids: &[String]) -> Result<()>;
     async fn leverage_set(&self, symbol: &str, leverage: u32) -> Result<()>;
@@ -79,58 +87,31 @@ pub trait EngineExchange: Send + Sync {
 #[async_trait]
 #[allow(unused_variables)]
 pub trait Strategy: Send + Sync {
-    /// 初始化事件
     async fn on_init(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// 开始事件
     async fn on_start(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// 停止事件
     async fn on_stop(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// 每日事件
     async fn on_daily(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// 每小时事件
     async fn on_hourly(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// 每分钟事件
     async fn on_minutely(&self, engine: Arc<dyn Engine>) -> Result<()> {
         Ok(())
     }
-
-    /// 每秒事件
-    async fn on_secondly(&self, engine: Arc<dyn Engine>) -> Result<()> {
+    async fn on_kline(&self, engine: Arc<dyn Engine>, kline: Kline) -> Result<()> {
         Ok(())
     }
-
-    /// Tick事件
-    async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
+    async fn on_order(&self, engine: Arc<dyn Engine>, order: Order) -> Result<()> {
         Ok(())
     }
-
-    /// 订单事件
-    async fn on_order(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        Ok(())
-    }
-
-    /// 市场行情变化事件
-    async fn on_market(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        Ok(())
-    }
-
-    /// 账户变化事件
-    async fn on_account(&self, engine: Arc<dyn Engine>) -> Result<()> {
+    async fn on_position(&self, engine: Arc<dyn Engine>, position: Position) -> Result<()> {
         Ok(())
     }
 }

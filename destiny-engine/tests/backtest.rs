@@ -23,17 +23,39 @@ impl Strategy for BacktestStrategy {
         Ok(())
     }
 
-    async fn on_tick(&self, engine: Arc<dyn Engine>) -> Result<()> {
+    /*
+    async fn on_daily(&self, engine: Arc<dyn Engine>) -> Result<()> {
+        let time = engine.time().str_ymd();
+        info!("{time}");
+        return Ok(());
+    }
+    // */
+
+    //*
+    async fn on_kline(&self, engine: Arc<dyn Engine>, kline: Kline) -> Result<()> {
+        let time = engine.time().str_ymd();
+        info!("{time} {kline:?}");
+        return Ok(());
+    }
+    // */
+
+    //*
+    async fn on_minutely(&self, engine: Arc<dyn Engine>) -> Result<()> {
         if !*self.is_buy.lock() {
-            engine.long_limit_open(&self.symbol, 1., 200.).await?;
+            engine
+                .long_limit_open(&self.symbol, dec!(1), dec!(200))
+                .await?;
             *self.is_buy.lock() = true;
         }
         let time = engine.time().str_ymd_hm();
         let price_mark = engine.price_mark(&self.symbol);
         let cash_available = engine.cash_available();
-        info!("{time} 标记价({price_mark:.2}),可用资金({cash_available:.2})");
+        let margin = engine.margin();
+        let long_size = engine.long_size(&self.symbol);
+        info!("{time} 标记价({price_mark:.2}),可用资金({cash_available:.4}),保证金({margin:.4}),多仓({long_size:.4})");
         Ok(())
     }
+    // */
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -42,22 +64,16 @@ async fn test_backtest() -> Result<()> {
         return Ok(());
     }
 
-    let log_collector = LogConfigBuilder::default()
-        .level(LogLevel::INFO)
-        .save_file(false)
-        .targets(vec!["backtest".to_string()])
-        .build()?
-        .init_log()
-        .await?;
-
-    let config = BacktestConfigBuilder::default()
-        .begin("2020".to_date()?)
-        .end("2024".to_date()?)
-        .build()?;
-
-    Backtest::run(config, Arc::new(BacktestStrategy::new())).await?;
-
-    log_collector.done().await?;
+    Backtest::run(
+        BacktestConfigBuilder::default()
+            .begin("2020".to_date()?)
+            .end("2021".to_date()?)
+            .log_show_std(true)
+            .log_targets(vec!["backtest".to_string()])
+            .build()?,
+        Arc::new(BacktestStrategy::new()),
+    )
+    .await?;
 
     Ok(())
 }
