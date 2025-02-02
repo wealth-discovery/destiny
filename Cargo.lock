@@ -603,6 +603,7 @@ dependencies = [
  "derive_builder",
  "homedir",
  "nu-ansi-term 0.50.1",
+ "once_cell",
  "pyo3",
  "sqlx",
  "tokio",

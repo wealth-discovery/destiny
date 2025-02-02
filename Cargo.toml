@@ -31,19 +31,19 @@ incremental = false
 destiny-engine = { path = "./destiny-engine" }
 destiny-helpers = { path = "./destiny-helpers" }
 destiny-types = { path = "./destiny-types" }
-tokio = { version = "1", features = ["full"] }
-anyhow = { version = "1" }
+tokio = { version = "1.43", features = ["full"] }
+anyhow = { version = "1.0" }
 tracing = { version = "0.1" }
 tracing-appender = { version = "0.2" }
 tracing-subscriber = { version = "0.3", features = ["local-time", "json"] }
 chrono = { version = "0.4" }
-once_cell = { version = "1" }
-rayon = { version = "1" }
+once_cell = { version = "1.20" }
+rayon = { version = "1.10" }
 futures = { version = "0.3" }
-serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
 async-trait = { version = "0.1" }
-uuid = { version = "1", features = ["v4", "fast-rng", "macro-diagnostics"] }
+uuid = { version = "1.12", features = ["v4", "fast-rng", "macro-diagnostics"] }
 homedir = { version = "0.3" }
 polars = { version = "0.46", default-features = false, features = [
     "lazy",
