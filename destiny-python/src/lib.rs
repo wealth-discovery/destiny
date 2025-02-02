@@ -616,8 +616,8 @@ impl Strategy for PythonStrategy {
 #[allow(clippy::too_many_arguments)]
 fn run_backtest(
     py: Python<'_>,
-    begin: DateTime<Utc>,
-    end: DateTime<Utc>,
+    begin: &str,
+    end: &str,
     cash: Decimal,
     fee_rate_taker: Decimal,
     fee_rate_maker: Decimal,
@@ -636,8 +636,8 @@ fn run_backtest(
         RUNTIME.block_on(async move {
             Backtest::run(
                 BacktestConfigBuilder::default()
-                    .begin(begin)
-                    .end(end)
+                    .begin(begin.to_date()?)
+                    .end(end.to_date()?)
                     .cash(cash)
                     .fee_rate_taker(fee_rate_taker)
                     .fee_rate_maker(fee_rate_maker)

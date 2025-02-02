@@ -224,8 +224,8 @@ OrderCallback = Callable[[API, Order], None]
 PositionCallback = Callable[[API, Position], None]
 
 def run_backtest(
-    begin: datetime,
-    end: datetime,
+    begin: str,
+    end: str,
     cash: Decimal = Decimal("1000"),
     fee_rate_taker: Decimal = Decimal("0.0005"),
     fee_rate_maker: Decimal = Decimal("0.0005"),
