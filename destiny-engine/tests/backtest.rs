@@ -38,7 +38,6 @@ impl Strategy for BacktestStrategy {
         return Ok(());
     }
     // */
-
     //*
     async fn on_minutely(&self, engine: Arc<dyn Engine>) -> Result<()> {
         if !*self.is_buy.lock() {
@@ -64,16 +63,22 @@ async fn test_backtest() -> Result<()> {
         return Ok(());
     }
 
+    let log_collector = LogConfigBuilder::default()
+        .show_std(true)
+        .targets(vec!["backtest".to_string()])
+        .build()?
+        .init_log()?;
+
     Backtest::run(
         BacktestConfigBuilder::default()
             .begin("2020".to_date()?)
             .end("2021".to_date()?)
-            .log_show_std(true)
-            .log_targets(vec!["backtest".to_string()])
             .build()?,
         Arc::new(BacktestStrategy::new()),
     )
     .await?;
+
+    log_collector.done();
 
     Ok(())
 }

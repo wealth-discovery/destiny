@@ -5,12 +5,12 @@ async fn test_sync_history_data() -> Result<()> {
     if bool::has_github_action() {
         return Ok(());
     }
+
     let log_collector = LogConfigBuilder::default()
-        .save_file(false)
+        .show_std(true)
         .targets(vec!["history_data".to_string()])
         .build()?
-        .init_log()
-        .await?;
+        .init_log()?;
 
     let _ = tokio::join!(
         tokio::spawn(async move {
@@ -27,7 +27,7 @@ async fn test_sync_history_data() -> Result<()> {
         }),
     );
 
-    log_collector.done().await?;
+    log_collector.done();
 
     Ok(())
 }

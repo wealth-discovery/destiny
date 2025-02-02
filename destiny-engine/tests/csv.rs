@@ -7,11 +7,10 @@ async fn test_csv() -> Result<()> {
     }
 
     let log_collector = LogConfigBuilder::default()
-        .save_file(false)
+        .show_std(true)
         .targets(vec!["csv".to_string()])
         .build()?
-        .init_log()
-        .await?;
+        .init_log()?;
 
     {
         let path = PathBuf::cache()?
@@ -40,7 +39,7 @@ async fn test_csv() -> Result<()> {
         }
     }
 
-    log_collector.done().await?;
+    log_collector.done();
 
     Ok(())
 }
