@@ -522,7 +522,7 @@ impl EngineExchange for Backtest {
         let leverage = Decimal::from(self.leverage(symbol));
         let cash_available = self.cash_available();
 
-        let size = size - size_tick % size;
+        let size = size - size % size_tick;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -595,7 +595,7 @@ impl EngineExchange for Backtest {
         let leverage = Decimal::from(self.leverage(symbol));
         let cash_available = self.cash_available();
 
-        let size = size - size_tick % size;
+        let size = size - size % size_tick;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -609,7 +609,7 @@ impl EngineExchange for Backtest {
             size_max,
         );
 
-        let price = price - price_tick % price;
+        let price = price - price % price_tick;
         ensure!(
             price >= price_min,
             "最低价格限制: 价格({}),限制({})",
@@ -676,7 +676,7 @@ impl EngineExchange for Backtest {
         let size_tick = self.rule_size_tick(symbol);
         let long_size_available = self.long_size_available(symbol);
 
-        let size = size - size_tick % size;
+        let size = size - size % size_tick;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -686,9 +686,9 @@ impl EngineExchange for Backtest {
 
         ensure!(
             long_size_available >= size,
-            "持仓数量不足: 数量({}),限制({})",
+            "持仓数量不足: 数量({}),可用({})",
+            size,
             long_size_available,
-            size
         );
 
         let order_id = String::gen_id();
@@ -736,7 +736,7 @@ impl EngineExchange for Backtest {
         let size_tick = self.rule_size_tick(symbol);
         let long_size_available = self.long_size_available(symbol);
 
-        let size = size - size_tick % size;
+        let size = size - size % size_tick;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -744,7 +744,7 @@ impl EngineExchange for Backtest {
             size_min
         );
 
-        let price = price - price_tick % price;
+        let price = price - price % price_tick;
         ensure!(
             price >= price_min,
             "最低价格限制: 价格({}),限制({})",
@@ -760,9 +760,9 @@ impl EngineExchange for Backtest {
 
         ensure!(
             long_size_available >= size,
-            "持仓数量不足: 数量({}),限制({})",
+            "持仓数量不足: 数量({}),可用({})",
+            size,
             long_size_available,
-            size
         );
 
         let order_id = String::gen_id();
@@ -806,7 +806,7 @@ impl EngineExchange for Backtest {
         let leverage = Decimal::from(self.leverage(symbol));
         let cash_available = self.cash_available();
 
-        let size = size - size_tick % size;
+        let size = size - size % size_tick;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -884,7 +884,7 @@ impl EngineExchange for Backtest {
         let leverage = Decimal::from(self.leverage(symbol));
         let cash_available = self.cash_available();
 
-        let size = size - size_tick % size;
+        let size = size - size % size_tick;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -898,7 +898,7 @@ impl EngineExchange for Backtest {
             size_max,
         );
 
-        let price = price - price_tick % price;
+        let price = price - price % price_tick;
         ensure!(
             price >= price_min,
             "最低价格限制: 价格({}),限制({})",
@@ -965,7 +965,7 @@ impl EngineExchange for Backtest {
         let size_min = self.rule_size_min(symbol);
         let short_size_available = self.short_size_available(symbol);
 
-        let size = size - size_tick % size;
+        let size = size - size % size_tick;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -975,9 +975,9 @@ impl EngineExchange for Backtest {
 
         ensure!(
             short_size_available >= size,
-            "持仓数量不足: 数量({}),限制({})",
-            short_size_available,
-            size
+            "持仓数量不足: 数量({}),可用({})",
+            size,
+            short_size_available
         );
 
         let order_id = String::gen_id();
@@ -1025,7 +1025,7 @@ impl EngineExchange for Backtest {
         let size_min = self.rule_size_min(symbol);
         let short_size_available = self.short_size_available(symbol);
 
-        let size = size - size_tick % size;
+        let size = size - size % size_tick;
         ensure!(
             size >= size_min,
             "最小数量限制: 数量({}),限制({})",
@@ -1033,7 +1033,7 @@ impl EngineExchange for Backtest {
             size_min
         );
 
-        let price = price - price_tick % price;
+        let price = price - price % price_tick;
         ensure!(
             price >= price_min,
             "最低价格限制: 价格({}),限制({})",
@@ -1049,9 +1049,9 @@ impl EngineExchange for Backtest {
 
         ensure!(
             short_size_available >= size,
-            "持仓数量不足: 数量({}),限制({})",
-            short_size_available,
-            size
+            "持仓数量不足: 数量({}),可用({})",
+            size,
+            short_size_available
         );
 
         let order_id = String::gen_id();
@@ -1210,10 +1210,14 @@ impl SymbolHistoryData {
         date: DateTime<Utc>,
     ) -> Result<()> {
         let history_data = self.0.get_mut(symbol).unwrap();
-        if let Some(kline) = history_data.index_price_klines.take(date).await? {
+        if let Some(kline) = history_data
+            .index_price_klines
+            .take(date - Duration::minutes(1))
+            .await?
+        {
             let mut account = backtest.account.lock();
             let symbol_position = account.positions.get_mut(symbol).unwrap();
-            symbol_position.symbol.market.index = kline.open;
+            symbol_position.symbol.market.index = kline.close;
         }
         Ok(())
     }
@@ -1225,10 +1229,14 @@ impl SymbolHistoryData {
         date: DateTime<Utc>,
     ) -> Result<()> {
         let history_data = self.0.get_mut(symbol).unwrap();
-        if let Some(kline) = history_data.mark_price_klines.take(date).await? {
+        if let Some(kline) = history_data
+            .mark_price_klines
+            .take(date - Duration::minutes(1))
+            .await?
+        {
             let mut account = backtest.account.lock();
             let symbol_position = account.positions.get_mut(symbol).unwrap();
-            symbol_position.symbol.market.mark = kline.open;
+            symbol_position.symbol.market.mark = kline.close;
         }
         Ok(())
     }

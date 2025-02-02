@@ -24,8 +24,8 @@ impl Strategy for BacktestStrategy {
     }
 
     async fn on_minutely(&self, engine: Arc<dyn Engine>) -> Result<()> {
-        return Ok(());
         if !*self.is_buy.lock() {
+            engine.long_market_close(&self.symbol, dec!(1)).await?;
             engine
                 .long_limit_open(&self.symbol, dec!(1), dec!(200))
                 .await?;
