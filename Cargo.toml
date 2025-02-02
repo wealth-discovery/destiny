@@ -1,5 +1,10 @@
 [workspace]
-members = ["destiny-engine", "destiny-helpers", "destiny-types"]
+members = [
+    "destiny-engine",
+    "destiny-helpers",
+    "destiny-types",
+    "destiny-python",
+]
 resolver = "2"
 
 [workspace.package]
@@ -66,3 +71,4 @@ parking_lot = { version = "0.12" }
 nu-ansi-term = { version = "0.50" }
 rust_decimal = { version = "1.36" }
 rust_decimal_macros = { version = "1.36" }
+pyo3 = { version = "0.23", features = ["full"] }

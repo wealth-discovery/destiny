@@ -1,0 +1,17 @@
+[package]
+name = "destiny-python"
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+edition.workspace = true
+license-file.workspace = true
+repository.workspace = true
+readme.workspace = true
+
+[lib]
+name = "destiny"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { workspace = true }
+destiny-engine = { workspace = true }
