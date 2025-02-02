@@ -158,7 +158,7 @@ pub struct Order {
     pub r#type: TradeType,
     /// 交易方向
     pub side: TradeSide,
-    /// 只减仓
+    /// 开仓订单
     pub reduce_only: bool,
     /// 订单状态
     pub status: OrderStatus,

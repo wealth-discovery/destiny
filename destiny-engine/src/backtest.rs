@@ -1477,6 +1477,7 @@ impl Backtest {
             let mut cross_orders = Vec::with_capacity(cross_order_ids.len());
             for id in cross_order_ids {
                 let order = positions.orders.remove(&id).unwrap();
+
                 fee += order.size
                     * price_last
                     * if order.status == OrderStatus::Created {
@@ -1484,14 +1485,47 @@ impl Backtest {
                     } else {
                         self.config.fee_rate_maker
                     };
+
                 if order.reduce_only {
-                    profit += match order.side {
-                        TradeSide::Long => (price_last - positions.long.price) * order.size,
-                        TradeSide::Short => (positions.short.price - price_last) * order.size,
+                    match order.side {
+                        TradeSide::Long => {
+                            profit += (price_last - positions.long.price) * order.size;
+                            positions.long.size -= order.size;
+                            if positions.long.size == Decimal::ZERO {
+                                positions.long.price = Decimal::ZERO;
+                            }
+                        }
+                        TradeSide::Short => {
+                            profit += (positions.short.price - price_last) * order.size;
+                            positions.short.size -= order.size;
+                            if positions.short.size == Decimal::ZERO {
+                                positions.short.price = Decimal::ZERO;
+                            }
+                        }
                     };
+                } else {
+                    match order.side {
+                        TradeSide::Long => {
+                            positions.long.price = (order.price * order.size
+                                + positions.long.price * positions.long.size)
+                                / (order.size + positions.long.size);
+                            positions.long.size += order.size;
+                        }
+                        TradeSide::Short => {
+                            positions.short.price = (order.price * order.size
+                                + positions.short.price * positions.short.size)
+                                / (order.size + positions.short.size);
+                            positions.short.size += order.size;
+                        }
+                    }
                 }
+
                 cross_orders.push(order);
             }
+
+            account.cash -= fee;
+            account.cash += profit;
+
             cross_orders
         };
 
