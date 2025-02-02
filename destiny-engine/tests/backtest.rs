@@ -22,6 +22,13 @@ impl Strategy for BacktestStrategy {
         engine.symbol_init(&self.symbol)?;
         Ok(())
     }
+    /*
+    async fn on_daily(&self, engine: Arc<dyn Engine>) -> Result<()> {
+        let time = engine.time().str_ymd();
+        info!("{time}");
+        return Ok(());
+    }
+    // */
 
     async fn on_minutely(&self, engine: Arc<dyn Engine>) -> Result<()> {
         if !*self.is_buy.lock() {
@@ -49,7 +56,7 @@ async fn test_backtest() -> Result<()> {
     Backtest::run(
         BacktestConfigBuilder::default()
             .begin("2020".to_date()?)
-            .end("2024".to_date()?)
+            .end("2021".to_date()?)
             .log_show_std(true)
             .log_targets(vec!["backtest".to_string()])
             .build()?,

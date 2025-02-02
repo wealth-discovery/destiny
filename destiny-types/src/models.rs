@@ -203,8 +203,8 @@ pub struct Position {
 }
 
 impl Position {
-    pub fn margin(&self, mark_price: Decimal, leverage: u32) -> Decimal {
-        self.size * mark_price / Decimal::from(leverage)
+    pub fn margin(&self, leverage: u32) -> Decimal {
+        self.size * self.price / Decimal::from(leverage)
     }
 
     pub fn pnl(&self, mark_price: Decimal) -> Decimal {
@@ -244,11 +244,11 @@ impl SymbolPosition {
     }
 
     pub fn margin_long(&self) -> Decimal {
-        self.long.margin(self.symbol.market.mark, self.leverage)
+        self.long.margin(self.leverage)
     }
 
     pub fn margin_short(&self) -> Decimal {
-        self.short.margin(self.symbol.market.mark, self.leverage)
+        self.short.margin(self.leverage)
     }
 
     pub fn margin_positions(&self) -> Decimal {
