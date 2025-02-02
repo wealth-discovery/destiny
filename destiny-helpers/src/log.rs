@@ -2,19 +2,14 @@ use crate::path::PathBufSupport;
 use anyhow::Result;
 use derive_builder::Builder;
 use nu_ansi_term::Color;
-use std::{io::Write, path::PathBuf};
-use tokio::{
-    fs::create_dir_all,
-    sync::mpsc::{unbounded_channel, UnboundedSender},
-    task::JoinHandle,
-};
+use std::{fs::create_dir_all, io::Write, path::PathBuf, thread::JoinHandle};
+use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
 use tracing::{field::Visit, level_filters::LevelFilter, Level};
 use tracing_subscriber::{layer::SubscriberExt, Layer};
 
 pub type LogLevel = LevelFilter;
 
 /// 日志配置
-#[cfg_attr(feature = "python", pyo3::pyclass)]
 #[derive(Builder)]
 #[builder(setter(into))]
 pub struct LogConfig {
@@ -30,50 +25,6 @@ pub struct LogConfig {
     /// 日志级别
     #[builder(default = LogLevel::INFO)]
     pub level: LogLevel,
-}
-
-#[cfg_attr(feature = "python", pyo3::pymethods)]
-impl LogConfig {
-    #[new]
-    fn py_new() -> Self {
-        Self {
-            show_std: true,
-            save_file: true,
-            targets: vec![],
-            level: LogLevel::INFO,
-        }
-    }
-
-    #[pyo3(signature = (value))]
-    fn show_std(mut slf: pyo3::PyRefMut<'_, Self>, value: bool) -> pyo3::PyRefMut<'_, Self> {
-        slf.show_std = value;
-        slf
-    }
-
-    #[pyo3(signature = (value))]
-    fn save_file(mut slf: pyo3::PyRefMut<'_, Self>, value: bool) -> pyo3::PyRefMut<'_, Self> {
-        slf.save_file = value;
-        slf
-    }
-
-    #[pyo3(signature = (target))]
-    fn target_add(mut slf: pyo3::PyRefMut<'_, Self>, target: String) -> pyo3::PyRefMut<'_, Self> {
-        slf.targets.push(target);
-        slf
-    }
-
-    #[pyo3(signature = (level))]
-    fn level<'a>(mut slf: pyo3::PyRefMut<'a, Self>, level: &'a str) -> pyo3::PyRefMut<'a, Self> {
-        match level {
-            "trace" => slf.level = LogLevel::TRACE,
-            "debug" => slf.level = LogLevel::DEBUG,
-            "info" => slf.level = LogLevel::INFO,
-            "warn" => slf.level = LogLevel::WARN,
-            "error" => slf.level = LogLevel::ERROR,
-            _ => slf.level = LogLevel::INFO,
-        }
-        slf
-    }
 }
 
 struct LogVisitor(Option<String>);
@@ -94,7 +45,7 @@ struct LogLayer {
 }
 
 impl LogLayer {
-    pub async fn new(
+    pub fn new(
         level: LogLevel,
         show_std: bool,
         save_file: bool,
@@ -103,7 +54,7 @@ impl LogLayer {
         let mut file_writer = None;
         if level != LogLevel::OFF && save_file {
             let dir = PathBuf::cache()?.join("logs");
-            create_dir_all(&dir).await?;
+            create_dir_all(&dir)?;
             let appender = tracing_appender::rolling::daily(dir, "log");
             let (writer, guard) = tracing_appender::non_blocking(appender);
             file_writer = Some(writer);
@@ -204,17 +155,16 @@ impl LogCollector {
     fn new(tx: UnboundedSender<Option<String>>, handle: JoinHandle<()>) -> Self {
         Self { tx, handle }
     }
-    pub async fn done(self) -> Result<()> {
-        self.tx.send(None).ok();
-        self.handle.await?;
-        Ok(())
+    pub fn done(self) {
+        self.tx.send(None).expect("日志收集器关闭信号发送失败");
+        self.handle.join().expect("日志收集器线程未完成");
     }
 }
 
 impl LogConfig {
     /// 初始化日志,将设置全局的日志配置.
     /// <br> 重复初始化会报错.
-    pub async fn init_log(self) -> Result<LogCollector> {
+    pub fn init_log(self) -> Result<LogCollector> {
         let mut targets =
             tracing_subscriber::filter::Targets::new().with_target("destiny_", LevelFilter::TRACE);
         for target in self.targets {
@@ -223,14 +173,14 @@ impl LogConfig {
 
         let (tx, mut rx) = unbounded_channel::<Option<String>>();
 
-        let handle = tokio::spawn(async move {
-            while let Some(Some(msg)) = rx.recv().await {
+        let handle = std::thread::spawn(move || {
+            while let Some(Some(msg)) = rx.blocking_recv() {
                 std::io::stdout().write_all(msg.as_bytes()).ok();
             }
         });
         let log_collector = LogCollector::new(tx.clone(), handle);
 
-        let layer = LogLayer::new(self.level, self.show_std, self.save_file, tx).await?;
+        let layer = LogLayer::new(self.level, self.show_std, self.save_file, tx)?;
 
         let collector = tracing_subscriber::registry().with(targets).with(layer);
 
