@@ -1244,8 +1244,6 @@ impl SymbolHistoryData {
                 .symbol
                 .market
                 .mark = kline.close;
-
-            backtest.liquidate(symbol).await?;
         }
         Ok(())
     }
@@ -1476,15 +1474,16 @@ impl Backtest {
 
             let mut cross_orders = Vec::with_capacity(cross_order_ids.len());
             for id in cross_order_ids {
-                let order = positions.orders.remove(&id).unwrap();
+                let mut order = positions.orders.remove(&id).unwrap();
 
-                fee += order.size
+                order.deal_fee = order.size
                     * price_last
                     * if order.status == OrderStatus::Created {
                         self.config.fee_rate_taker
                     } else {
                         self.config.fee_rate_maker
                     };
+                fee += order.deal_fee;
 
                 if order.reduce_only {
                     match order.side {
@@ -1520,6 +1519,10 @@ impl Backtest {
                     }
                 }
 
+                order.status = OrderStatus::Filled;
+                order.deal_price = price_last;
+                order.deal_size = order.size;
+
                 cross_orders.push(order);
             }
 
@@ -1533,10 +1536,6 @@ impl Backtest {
             self.on_order(order).await?;
         }
 
-        Ok(())
-    }
-
-    async fn liquidate(self: &Arc<Self>, symbol: &str) -> Result<()> {
         Ok(())
     }
 }
