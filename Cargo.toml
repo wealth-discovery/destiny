@@ -4,7 +4,7 @@ resolver = "2"
 
 [workspace.package]
 version = "1.0.0"
-authors = ["<Husky> <husky@wealths.app"]
+authors = ["<Husky> <husky.robot.dog@gmail.com>"]
 description = "天命量化库"
 edition = "2021"
 license-file = "LICENSE"

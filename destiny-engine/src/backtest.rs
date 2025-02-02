@@ -32,6 +32,18 @@ pub struct BacktestConfig {
     /// 滑点
     #[builder(default = dec!(0.01))]
     pub slippage_rate: Decimal,
+    /// 是否在控制台输出
+    #[builder(default = false)]
+    pub log_show_std: bool,
+    /// 是否写入文件
+    #[builder(default = false)]
+    pub log_save_file: bool,
+    /// 可显示的包名,默认显示[`destiny_`]开头的包
+    #[builder(default = vec![])]
+    pub log_targets: Vec<String>,
+    /// 日志级别
+    #[builder(default = LogLevel::INFO)]
+    pub log_level: LogLevel,
 }
 
 pub struct Backtest {
@@ -1266,7 +1278,27 @@ impl Backtest {
     }
 
     pub async fn run(config: BacktestConfig, strategy: Arc<dyn Strategy>) -> Result<()> {
-        Self::new(config, strategy)?.run0().await
+        let log_collector = LogConfigBuilder::default()
+            .show_std(config.log_show_std)
+            .save_file(config.log_save_file)
+            .targets(config.log_targets.to_owned())
+            .level(config.log_level)
+            .build()?
+            .init_log()
+            .await?;
+
+        tracing::info!(
+            "\n\n\n{}\t    Author : {}\n\t   Version : {}\n\tRepository : {}\n\n\n",
+            LOGO,
+            AUTHOR,
+            VERSION,
+            REPOSITORY
+        );
+
+        Self::new(config, strategy)?.run0().await?;
+
+        log_collector.done().await?;
+        Ok(())
     }
 }
 
