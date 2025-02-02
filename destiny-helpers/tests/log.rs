@@ -7,8 +7,7 @@ async fn test_log() -> Result<()> {
         .save_file(false)
         .targets(vec!["log".to_string()])
         .build()?
-        .init_log()
-        .await?;
+        .init_log()?;
 
     tracing::trace!("trace");
     tracing::debug!("debug");
@@ -16,7 +15,7 @@ async fn test_log() -> Result<()> {
     tracing::warn!("warn");
     tracing::error!("error");
 
-    log_collector.done().await?;
+    log_collector.done();
 
     Ok(())
 }

@@ -2,12 +2,8 @@ use crate::path::PathBufSupport;
 use anyhow::Result;
 use derive_builder::Builder;
 use nu_ansi_term::Color;
-use std::{io::Write, path::PathBuf};
-use tokio::{
-    fs::create_dir_all,
-    sync::mpsc::{unbounded_channel, UnboundedSender},
-    task::JoinHandle,
-};
+use std::{fs::create_dir_all, io::Write, path::PathBuf, thread::JoinHandle};
+use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
 use tracing::{field::Visit, level_filters::LevelFilter, Level};
 use tracing_subscriber::{layer::SubscriberExt, Layer};
 
@@ -18,10 +14,10 @@ pub type LogLevel = LevelFilter;
 #[builder(setter(into))]
 pub struct LogConfig {
     /// 是否在控制台输出
-    #[builder(default = true)]
+    #[builder(default = false)]
     pub show_std: bool,
     /// 是否写入文件
-    #[builder(default = true)]
+    #[builder(default = false)]
     pub save_file: bool,
     /// 可显示的包名,默认显示[`destiny_`]开头的包
     #[builder(default = vec![])]
@@ -49,7 +45,7 @@ struct LogLayer {
 }
 
 impl LogLayer {
-    pub async fn new(
+    pub fn new(
         level: LogLevel,
         show_std: bool,
         save_file: bool,
@@ -58,7 +54,7 @@ impl LogLayer {
         let mut file_writer = None;
         if level != LogLevel::OFF && save_file {
             let dir = PathBuf::cache()?.join("logs");
-            create_dir_all(&dir).await?;
+            create_dir_all(&dir)?;
             let appender = tracing_appender::rolling::daily(dir, "log");
             let (writer, guard) = tracing_appender::non_blocking(appender);
             file_writer = Some(writer);
@@ -159,33 +155,38 @@ impl LogCollector {
     fn new(tx: UnboundedSender<Option<String>>, handle: JoinHandle<()>) -> Self {
         Self { tx, handle }
     }
-    pub async fn done(self) -> Result<()> {
-        self.tx.send(None).ok();
-        self.handle.await?;
-        Ok(())
+    pub fn done(self) {
+        self.tx.send(None).expect("日志收集器关闭信号发送失败");
+        self.handle.join().expect("日志收集器线程未完成");
     }
 }
 
 impl LogConfig {
     /// 初始化日志,将设置全局的日志配置.
     /// <br> 重复初始化会报错.
-    pub async fn init_log(self) -> Result<LogCollector> {
+    pub fn init_log(self) -> Result<LogCollector> {
         let mut targets =
             tracing_subscriber::filter::Targets::new().with_target("destiny_", LevelFilter::TRACE);
+
+        #[cfg(feature = "python")]
+        {
+            targets = targets.with_target("destiny", LevelFilter::TRACE);
+        }
+
         for target in self.targets {
             targets = targets.with_target(target, LevelFilter::TRACE);
         }
 
         let (tx, mut rx) = unbounded_channel::<Option<String>>();
 
-        let handle = tokio::spawn(async move {
-            while let Some(Some(msg)) = rx.recv().await {
+        let handle = std::thread::spawn(move || {
+            while let Some(Some(msg)) = rx.blocking_recv() {
                 std::io::stdout().write_all(msg.as_bytes()).ok();
             }
         });
         let log_collector = LogCollector::new(tx.clone(), handle);
 
-        let layer = LogLayer::new(self.level, self.show_std, self.save_file, tx).await?;
+        let layer = LogLayer::new(self.level, self.show_std, self.save_file, tx)?;
 
         let collector = tracing_subscriber::registry().with(targets).with(layer);
 

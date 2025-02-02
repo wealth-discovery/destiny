@@ -56,12 +56,11 @@ pub struct SymbolMarket {
 }
 
 /// K线
+#[cfg_attr(feature = "python", pyo3::pyclass(get_all, frozen))]
 #[derive(Debug, Clone)]
 pub struct Kline {
     /// 交易对
     pub symbol: String,
-    /// 周期
-    pub interval: KlineInterval,
     /// 开盘时间
     pub open_time: DateTime<Utc>,
     /// 开盘价
@@ -82,8 +81,6 @@ pub struct Kline {
     pub buy_cash: Decimal,
     /// 交易笔数
     pub trades: i64,
-    /// 时间
-    pub time: DateTime<Utc>,
 }
 
 /// 深度信息
@@ -148,6 +145,7 @@ pub struct FundingRateHistory {
 }
 
 /// 订单
+#[cfg_attr(feature = "python", pyo3::pyclass(get_all, frozen))]
 #[derive(Debug, Clone)]
 pub struct Order {
     /// ID
@@ -192,6 +190,7 @@ impl Order {
 }
 
 /// 持仓
+#[cfg_attr(feature = "python", pyo3::pyclass(get_all, frozen))]
 #[derive(Debug, Clone)]
 pub struct Position {
     /// 方向

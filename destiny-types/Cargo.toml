@@ -15,3 +15,8 @@ serde = { workspace = true }
 strum = { workspace = true }
 rayon = { workspace = true }
 rust_decimal = { workspace = true }
+pyo3 = { workspace = true, optional = true }
+
+[features]
+default = []
+python = ["dep:pyo3", "destiny-helpers/python"]

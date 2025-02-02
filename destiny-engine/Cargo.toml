@@ -27,3 +27,8 @@ rayon = { workspace = true }
 csv-async = { workspace = true }
 rust_decimal = { workspace = true }
 rust_decimal_macros = { workspace = true }
+pyo3 = { workspace = true, optional = true }
+
+[features]
+default = []
+python = ["dep:pyo3", "destiny-helpers/python", "destiny-types/python"]
