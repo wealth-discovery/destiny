@@ -223,7 +223,7 @@ KlineCallback = Callable[[API, Kline], None]
 OrderCallback = Callable[[API, Order], None]
 PositionCallback = Callable[[API, Position], None]
 
-def run_backtest(
+def run_backtest__(
     begin: str,
     end: str,
     cash: Decimal = Decimal("1000"),

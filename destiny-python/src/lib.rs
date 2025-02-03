@@ -594,7 +594,7 @@ impl Strategy for PythonStrategy {
 
 #[pyfunction]
 #[pyo3(
-    name="run_backtest", 
+    name="run_backtest__", 
     signature = (
         begin,
         end,
