@@ -16,7 +16,7 @@ from .destiny import (
     API,
 )
 from .backtest import run_backtest
-from .callback import Strategy
+from .strategy import Strategy
 from decimal import Decimal
 from datetime import datetime
 from typing import List, Literal, Optional, Callable

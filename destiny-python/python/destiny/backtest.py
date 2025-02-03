@@ -1,7 +1,7 @@
 from .destiny import *
-from .callback import Strategy, StrategyWrapper
+from .strategy import Strategy, StrategyWrapper
 from decimal import Decimal
-from typing import Optional
+import setproctitle
 
 
 def run_backtest(
@@ -32,6 +32,7 @@ def run_backtest(
     [`on_position`] : 持仓事件
     """
 
+    setproctitle.setproctitle(f"wealth-discovery-destiny-backtest")
     strategy = StrategyWrapper(strategy)
     run_backtest__(
         begin,
