@@ -12,23 +12,23 @@ Destiny 是一个用 Rust 编写的高性能量化交易库，旨在提供快速
 - 🔧 实用的交易工具集
 - 💡 灵活的策略开发框架
 
-## 📦 项目结构
-
-```
-destiny/
-├── destiny-engine/    - 核心回测引擎
-├── destiny-helpers/   - 工具函数库
-└── destiny-types/     - 通用数据类型定义
-```
-
 ## 🚀 快速开始
 
 ### 环境要求
 
+- Python 3.8+
 - Rust 1.75+
 - Cargo
 
 ### 安装
+
+#### Python 包安装
+
+```bash
+pip install wealth-discovery-destiny
+```
+
+#### 从源码安装
 
 ```bash
 git clone https://github.com/wealth-discovery/destiny.git
