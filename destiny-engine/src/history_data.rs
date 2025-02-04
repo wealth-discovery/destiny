@@ -3,7 +3,7 @@ use async_zip::base::read::seek::ZipFileReader;
 use chrono::{DateTime, Datelike, Duration, Months, Utc};
 use destiny_helpers::prelude::*;
 use destiny_types::prelude::*;
-use futures::{stream::StreamExt, AsyncReadExt, Stream, TryStreamExt};
+use futures::{stream::StreamExt, AsyncReadExt, Stream};
 use rust_decimal::{prelude::FromPrimitive, Decimal};
 use std::{cmp::Ordering, path::PathBuf, pin::Pin};
 use strum::IntoEnumIterator;
@@ -525,7 +525,7 @@ impl HistoryData {
         let reader = csv_async::AsyncReader::from_reader(File::open(path).await?);
         let records = reader.into_records().map(|record| {
             let record = record?;
-            Ok(D::decode(&record)?)
+            D::decode(&record)
         });
 
         Ok(Box::pin(records))
