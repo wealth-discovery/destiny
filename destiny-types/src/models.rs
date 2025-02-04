@@ -1,7 +1,8 @@
 use crate::enums::*;
-use chrono::{DateTime, Utc};
+use chrono::{serde::ts_milliseconds as serde_chrono, DateTime, Utc};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use rust_decimal::Decimal;
+use rust_decimal::{serde::float as serde_decimal, Decimal};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// 交易对
@@ -57,27 +58,36 @@ pub struct SymbolMarket {
 
 /// K线
 #[cfg_attr(feature = "python", pyo3::pyclass(get_all, frozen))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Kline {
     /// 交易对
     pub symbol: String,
     /// 开盘时间
+    #[serde(with = "serde_chrono")]
     pub open_time: DateTime<Utc>,
     /// 开盘价
+    #[serde(with = "serde_decimal")]
     pub open: Decimal,
     /// 最高价
+    #[serde(with = "serde_decimal")]
     pub high: Decimal,
     /// 最低价
+    #[serde(with = "serde_decimal")]
     pub low: Decimal,
     /// 收盘价
+    #[serde(with = "serde_decimal")]
     pub close: Decimal,
     /// 成交量
+    #[serde(with = "serde_decimal")]
     pub size: Decimal,
     /// 成交额
+    #[serde(with = "serde_decimal")]
     pub cash: Decimal,
     /// 买方成交量
+    #[serde(with = "serde_decimal")]
     pub buy_size: Decimal,
     /// 买方成交额
+    #[serde(with = "serde_decimal")]
     pub buy_cash: Decimal,
     /// 交易笔数
     pub trades: i64,
@@ -132,21 +142,24 @@ pub struct AggTrade {
 }
 
 /// 历史资金费率
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FundingRateHistory {
     /// 交易对
     pub symbol: String,
     /// 标记价格
+    #[serde(with = "serde_decimal")]
     pub mark_price: Decimal,
     /// 资金费率
+    #[serde(with = "serde_decimal")]
     pub rate: Decimal,
     /// 时间
+    #[serde(with = "serde_chrono")]
     pub time: DateTime<Utc>,
 }
 
 /// 订单
 #[cfg_attr(feature = "python", pyo3::pyclass(get_all, frozen))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Order {
     /// ID
     pub id: String,
@@ -161,16 +174,22 @@ pub struct Order {
     /// 订单状态
     pub status: OrderStatus,
     /// 价格
+    #[serde(with = "serde_decimal")]
     pub price: Decimal,
     /// 数量
+    #[serde(with = "serde_decimal")]
     pub size: Decimal,
     /// 成交价格
+    #[serde(with = "serde_decimal")]
     pub deal_price: Decimal,
     /// 成交数量
+    #[serde(with = "serde_decimal")]
     pub deal_size: Decimal,
     /// 成交手续费
+    #[serde(with = "serde_decimal")]
     pub deal_fee: Decimal,
     /// 创建时间
+    #[serde(with = "serde_chrono")]
     pub create_time: DateTime<Utc>,
 }
 

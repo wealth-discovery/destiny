@@ -18,6 +18,7 @@ fn destiny(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(log_warn, m)?)?;
     m.add_function(wrap_pyfunction!(log_error, m)?)?;
     m.add_function(wrap_pyfunction!(log_print, m)?)?;
+    m.add_function(wrap_pyfunction!(download_history_data, m)?)?;
     m.add_function(wrap_pyfunction!(run_backtest, m)?)?;
     Ok(())
 }
@@ -594,7 +595,35 @@ impl Strategy for PythonStrategy {
 
 #[pyfunction]
 #[pyo3(
-    name="run_backtest", 
+    name="download_history_data",
+    signature = (metas)
+)]
+fn download_history_data(py: Python<'_>, metas: Vec<(String, String, String)>) -> Result<()> {
+    py.allow_threads(|| {
+        RUNTIME.block_on(async move {
+            let mut handles = Vec::new();
+            for meta in metas {
+                let handle = tokio::spawn(async move {
+                    SyncHistoryData::sync_symbol(
+                        meta.0.as_str(),
+                        meta.1.as_str().to_date()?,
+                        meta.2.as_str().to_date()?,
+                    )
+                    .await
+                });
+                handles.push(handle);
+            }
+            for handle in handles {
+                handle.await??;
+            }
+            anyhow::Ok(())
+        })
+    })
+}
+
+#[pyfunction]
+#[pyo3(
+    name="run_backtest__", 
     signature = (
         begin,
         end,

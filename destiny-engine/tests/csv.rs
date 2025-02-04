@@ -1,4 +1,5 @@
 use destiny_engine::prelude::*;
+use futures::StreamExt;
 
 #[tokio::test]
 async fn test_csv() -> Result<()> {
@@ -19,9 +20,9 @@ async fn test_csv() -> Result<()> {
             .join("fundingRate")
             .join("202001.csv");
 
-        let datas = HistoryData::csv_read::<FundingRateHistory>(&path).await?;
-        for data in datas {
-            tracing::info!("{:?}", data);
+        let mut datas = HistoryData::csv_read::<FundingRateHistory>(&path).await?;
+        while let Some(item) = datas.next().await {
+            tracing::info!("{:?}", item?);
         }
     }
 
@@ -33,9 +34,9 @@ async fn test_csv() -> Result<()> {
             .join("1m")
             .join("202412.csv");
 
-        let datas = HistoryData::csv_read::<Kline>(&path).await?;
-        for data in datas {
-            tracing::info!("{:?}", data);
+        let mut datas = HistoryData::csv_read::<Kline>(&path).await?;
+        while let Some(item) = datas.next().await {
+            tracing::info!("{:?}", item?);
         }
     }
 
