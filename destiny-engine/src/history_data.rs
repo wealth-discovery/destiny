@@ -312,52 +312,46 @@ impl SyncHistoryMeta {
                 symbol,
                 year,
                 month,
-            } => format!("日期({year}-{month:02}),交易对({symbol}),类型(聚合交易)"),
+            } => format!("交易对[{symbol:>10}],类型[聚合交易],日期[{year}-{month:02}]"),
             SyncHistoryMeta::BookTicker {
                 symbol,
                 year,
                 month,
-            } => format!("日期({year}-{month:02}),交易对({symbol}),类型(盘口)"),
+            } => format!("交易对[{symbol:>10}],类型[　盘口　],日期[{year}-{month:02}]"),
             SyncHistoryMeta::FundingRate {
                 symbol,
                 year,
                 month,
-            } => format!("日期({year}-{month:02}),交易对({symbol}),类型(资金费率)"),
+            } => format!("交易对[{symbol:>10}],类型[资金费率],日期[{year}-{month:02}]"),
             SyncHistoryMeta::IndexPriceKlines {
                 symbol,
-                interval,
+                interval: _,
                 year,
                 month,
-            } => {
-                format!("日期({year}-{month:02}),交易对({symbol}),类型(指数价格),周期({interval})")
-            }
+            } => format!("交易对[{symbol:>10}],类型[指数价格],日期[{year}-{month:02}]"),
             SyncHistoryMeta::Klines {
                 symbol,
-                interval,
+                interval: _,
                 year,
                 month,
-            } => format!("日期({year}-{month:02}),交易对({symbol}),类型(K线),周期({interval})"),
+            } => format!("交易对[{symbol:>10}],类型[最新价格],日期[{year}-{month:02}]"),
             SyncHistoryMeta::MarkPriceKlines {
                 symbol,
-                interval,
+                interval: _,
                 year,
                 month,
-            } => {
-                format!("日期({year}-{month:02}),交易对({symbol}),类型(标记价格),周期({interval})")
-            }
+            } => format!("交易对[{symbol:>10}],类型[标记价格],日期[{year}-{month:02}]"),
             SyncHistoryMeta::PremiumIndexKlines {
                 symbol,
-                interval,
+                interval: _,
                 year,
                 month,
-            } => {
-                format!("日期({year}-{month:02}),交易对({symbol}),类型(溢价指数),周期({interval})")
-            }
+            } => format!("交易对[{symbol:>10}],类型[溢价指数],日期[{year}-{month:02}]"),
             SyncHistoryMeta::Trades {
                 symbol,
                 year,
                 month,
-            } => format!("日期({year}-{month:02}),交易对({symbol}),类型(交易)"),
+            } => format!("交易对[{symbol:>10}],类型[　交易　],日期[{year}-{month:02}]"),
         }
     }
 }
@@ -365,14 +359,12 @@ impl SyncHistoryMeta {
 impl SyncHistoryMeta {
     async fn sync(&self) {
         while let Err(err) = self.sync0().await {
-            tracing::error!("同步失败: {}", err);
+            tracing::error!("{} {}", self.desc(), err);
             sleep(Duration::milliseconds(200).to_std().unwrap()).await;
         }
     }
 
     async fn sync0(&self) -> Result<()> {
-        tracing::info!("同步信息: {}", self.desc());
-
         let save_path = PathBuf::cache()?
             .join("history_data")
             .join(self.save_path());
@@ -382,11 +374,11 @@ impl SyncHistoryMeta {
 
         let save_file_path = save_path.join(self.save_file_name());
         if save_file_path.exists() {
-            tracing::debug!("本地数据已存在");
+            tracing::info!("{} 已缓存", self.desc());
             return Ok(());
         }
 
-        tracing::info!("开始下载...");
+        tracing::info!("{} 开始下载...", self.desc());
 
         let request_url = self.url();
         let response = reqwest::ClientBuilder::default()
@@ -398,7 +390,7 @@ impl SyncHistoryMeta {
             .await?;
         if !response.status().is_success() {
             if response.status().as_u16() == 404 {
-                tracing::warn!("状态码: 404");
+                tracing::warn!("{} 历史数据不存在", self.desc());
                 return Ok(());
             }
             bail!("下载失败: {}", response.status());
@@ -415,7 +407,7 @@ impl SyncHistoryMeta {
         csv_file.write_all(&csv_data).await?;
         csv_file.shutdown().await?;
 
-        tracing::info!("下载成功");
+        tracing::info!("{} 下载成功", self.desc());
 
         Ok(())
     }
