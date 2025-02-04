@@ -55,14 +55,14 @@ polars = { version = "0.46", default-features = false, features = [
     "cse",
 ] }
 derive_builder = { version = "0.20" }
-sqlx = { version = "0.8", features = [
-    "runtime-tokio",
-    "tls-rustls-ring-webpki",
-    "sqlite",
-    "derive",
-    "macros",
-    "chrono",
-] }
+# sqlx = { version = "0.8", features = [
+#     "runtime-tokio",
+#     "tls-rustls-ring-webpki",
+#     "sqlite",
+#     "derive",
+#     "macros",
+#     "chrono",
+# ] }
 reqwest = { version = "0.12", default-features = false, features = [
     "rustls-tls",
     "stream",
@@ -75,4 +75,3 @@ nu-ansi-term = { version = "0.50" }
 rust_decimal = { version = "1.36", features = ["serde", "serde-with-float"] }
 rust_decimal_macros = { version = "1.36" }
 pyo3 = { version = "0.23", features = ["full"] }
-bincode = { version = "2.0.0-rc.3" }

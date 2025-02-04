@@ -15,7 +15,6 @@ strum = { workspace = true }
 rayon = { workspace = true }
 rust_decimal = { workspace = true }
 pyo3 = { workspace = true, optional = true }
-bincode = { workspace = true }
 
 [features]
 default = []
