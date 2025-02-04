@@ -512,7 +512,9 @@ pub trait DecodeCsvRecord {
 pub struct HistoryData;
 
 impl HistoryData {
-    pub async fn csv_read<D>(path: &PathBuf) -> Result<Pin<Box<dyn Stream<Item = Result<D::T>>>>>
+    pub async fn csv_read<D>(
+        path: &PathBuf,
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<D::T>> + Send>>>
     where
         D: DecodeCsvRecord,
     {
@@ -521,7 +523,7 @@ impl HistoryData {
         }
 
         let reader = csv_async::AsyncReader::from_reader(File::open(path).await?);
-        let records = reader.into_records().into_stream().map(|record| {
+        let records = reader.into_records().map(|record| {
             let record = record?;
             Ok(D::decode(&record)?)
         });
@@ -715,12 +717,11 @@ where
             while begin_month <= end_month {
                 let path = base_path.join(format!("{}.csv", begin_month.str_ym()));
                 tracing::trace!("加载历史数据: {}", path.display());
-                let data = HistoryData::csv_read::<D>(&path).await?;
-                tracing::trace!("加载完成: {} 数量大小({})", path.display(), data.len());
-                for item in data {
+                let mut data = HistoryData::csv_read::<D>(&path).await?;
+                while let Some(item) = data.next().await {
+                    let item = item?;
                     if item.datetime() >= begin && item.datetime() <= end {
                         tx.send(item).await.expect("发送数据失败");
-                        tokio::task::yield_now().await;
                     }
                 }
 
