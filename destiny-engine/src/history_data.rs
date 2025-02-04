@@ -3,9 +3,9 @@ use async_zip::base::read::seek::ZipFileReader;
 use chrono::{DateTime, Datelike, Duration, Months, Utc};
 use destiny_helpers::prelude::*;
 use destiny_types::prelude::*;
-use futures::{stream::StreamExt, AsyncReadExt};
+use futures::{stream::StreamExt, AsyncReadExt, Stream, TryStreamExt};
 use rust_decimal::{prelude::FromPrimitive, Decimal};
-use std::{cmp::Ordering, path::PathBuf};
+use std::{cmp::Ordering, path::PathBuf, pin::Pin};
 use strum::IntoEnumIterator;
 use tokio::{
     fs::{create_dir_all, File},
@@ -512,25 +512,21 @@ pub trait DecodeCsvRecord {
 pub struct HistoryData;
 
 impl HistoryData {
-    pub async fn csv_read<D>(path: &PathBuf) -> Result<Vec<D::T>>
+    pub async fn csv_read<D>(path: &PathBuf) -> Result<Pin<Box<dyn Stream<Item = Result<D::T>>>>>
     where
         D: DecodeCsvRecord,
     {
         if !path.exists() {
-            return Ok(vec![]);
+            return Ok(Box::pin(futures::stream::empty()));
         }
 
-        let mut reader = csv_async::AsyncReader::from_reader(File::open(path).await?);
-        let mut records = reader.records();
-
-        let mut result = vec![];
-
-        while let Some(record) = records.next().await {
+        let reader = csv_async::AsyncReader::from_reader(File::open(path).await?);
+        let records = reader.into_records().into_stream().map(|record| {
             let record = record?;
-            result.push(D::decode(&record)?);
-        }
+            Ok(D::decode(&record)?)
+        });
 
-        Ok(result)
+        Ok(Box::pin(records))
     }
 }
 
