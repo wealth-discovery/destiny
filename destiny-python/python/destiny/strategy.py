@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
 from .destiny import *
-import numpy as np
 
 
 class Strategy(ABC):
@@ -44,8 +42,6 @@ class Strategy(ABC):
 
 class StrategyWrapper(Strategy):
     callback: Strategy
-    _daily_cash: np.ndarray
-    _time: datetime
 
     def __init__(self, callback: Strategy):
         self.callback = callback
@@ -54,21 +50,12 @@ class StrategyWrapper(Strategy):
         self.callback.on_init(api)
 
     def on_start(self, api: API):
-        self._daily_cash = np.array([api.cash_available()])
-        self._time = api.time()
         self.callback.on_start(api)
 
     def on_stop(self, api: API):
         self.callback.on_stop(api)
 
     def on_daily(self, api: API):
-        time = api.time()
-        if time != self._time:
-            cash_available = api.cash_available()
-            self._daily_cash = np.append(self._daily_cash, cash_available)
-            self._time = time
-            daily_cash_mean = self._daily_cash.mean()
-            info(f"{time.strftime('%Y%m%d')} 资金均值:({daily_cash_mean:.2f}),当前资产({cash_available:.2f})")
         self.callback.on_daily(api)
 
     def on_hourly(self, api: API):
