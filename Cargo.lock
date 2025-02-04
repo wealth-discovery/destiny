@@ -588,7 +588,6 @@ dependencies = [
  "homedir",
  "nu-ansi-term 0.50.1",
  "once_cell",
- "pyo3",
  "sqlx",
  "tokio",
  "tracing",
@@ -614,7 +613,6 @@ name = "destiny-types"
 version = "1.0.0"
 dependencies = [
  "chrono",
- "destiny-helpers",
  "pyo3",
  "rayon",
  "rust_decimal",

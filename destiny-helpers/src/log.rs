@@ -166,12 +166,7 @@ impl LogConfig {
     /// <br> 重复初始化会报错.
     pub fn init_log(self) -> Result<LogCollector> {
         let mut targets =
-            tracing_subscriber::filter::Targets::new().with_target("destiny_", LevelFilter::TRACE);
-
-        #[cfg(feature = "python")]
-        {
-            targets = targets.with_target("destiny", LevelFilter::TRACE);
-        }
+            tracing_subscriber::filter::Targets::new().with_target("destiny", LevelFilter::TRACE);
 
         for target in self.targets {
             targets = targets.with_target(target, LevelFilter::TRACE);
