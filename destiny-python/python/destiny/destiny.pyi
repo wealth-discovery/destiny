@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional, Callable
+from typing import List, Literal, Optional, Callable, Tuple
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum, auto
@@ -217,6 +217,12 @@ class API:
     def order_close(self, symbol: str, id: str): ...
     def order_cancel_many(self, symbol: str, ids: List[str]): ...
     def leverage_set(self, symbol: str, leverage: int): ...
+
+def download_history_data(metas: List[Tuple[str, str, str]]):
+    """
+    下载历史数据
+    [`metas`] : 历史数据元组列表. Tuple(交易对, 开始时间, 结束时间)
+    """
 
 BasicCallback = Callable[[API], None]
 KlineCallback = Callable[[API, Kline], None]
