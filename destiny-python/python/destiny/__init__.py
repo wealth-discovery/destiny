@@ -14,6 +14,7 @@ from .destiny import (
     Order,
     Position,
     API,
+    download_history_data,
 )
 from .backtest import run_backtest
 from .strategy import Strategy
