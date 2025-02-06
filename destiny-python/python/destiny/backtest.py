@@ -1,5 +1,6 @@
 from .destiny import *
-from .strategy import Strategy, StrategyWrapper
+from .strategy import Strategy
+from .backtest_strategy import BacktestStrategy
 from decimal import Decimal
 import setproctitle
 
@@ -33,7 +34,7 @@ def run_backtest(
     """
 
     setproctitle.setproctitle(f"wealth-discovery-destiny-backtest")
-    strategy = StrategyWrapper(strategy)
+    strategy = BacktestStrategy(strategy)
     run_backtest__(
         begin,
         end,
