@@ -162,61 +162,349 @@ class Position:
     """持仓"""
 
 class API:
-    def time(self) -> datetime: ...
-    def stop(self): ...
-    def init_symbol(self, symbol: str): ...
-    def order(self, symbol: str, id: str) -> Optional[Order]: ...
-    def orders(self, symbol: str) -> List[Order]: ...
-    def orders_long(self, symbol: str) -> List[Order]: ...
-    def orders_long_open(self, symbol: str) -> List[Order]: ...
-    def orders_long_close(self, symbol: str) -> List[Order]: ...
-    def orders_short(self, symbol: str) -> List[Order]: ...
-    def orders_short_open(self, symbol: str) -> List[Order]: ...
-    def orders_short_close(self, symbol: str) -> List[Order]: ...
-    def leverage(self, symbol: str) -> int: ...
-    def cash(self) -> Decimal: ...
-    def cash_available(self) -> Decimal: ...
-    def cash_frozen(self) -> Decimal: ...
-    def margin(self) -> Decimal: ...
-    def pnl(self) -> Decimal: ...
-    def long_price(self, symbol: str) -> Decimal: ...
-    def long_size(self, symbol: str) -> Decimal: ...
-    def long_size_available(self, symbol: str) -> Decimal: ...
-    def long_size_frozen(self, symbol: str) -> Decimal: ...
-    def long_margin(self, symbol: str) -> Decimal: ...
-    def long_pnl(self, symbol: str) -> Decimal: ...
-    def short_price(self, symbol: str) -> Decimal: ...
-    def short_size(self, symbol: str) -> Decimal: ...
-    def short_size_available(self, symbol: str) -> Decimal: ...
-    def short_size_frozen(self, symbol: str) -> Decimal: ...
-    def short_margin(self, symbol: str) -> Decimal: ...
-    def short_pnl(self, symbol: str) -> Decimal: ...
-    def symbol_pnl(self, symbol: str) -> Decimal: ...
-    def symbol_margin(self, symbol: str) -> Decimal: ...
-    def price_mark(self, symbol: str) -> Decimal: ...
-    def price_last(self, symbol: str) -> Decimal: ...
-    def price_index(self, symbol: str) -> Decimal: ...
-    def price_settlement(self, symbol: str) -> Decimal: ...
-    def time_settlement(self, symbol: str) -> datetime: ...
-    def rule_price_min(self, symbol: str) -> Decimal: ...
-    def rule_price_max(self, symbol: str) -> Decimal: ...
-    def rule_price_tick(self, symbol: str) -> Decimal: ...
-    def rule_size_min(self, symbol: str) -> Decimal: ...
-    def rule_size_max(self, symbol: str) -> Decimal: ...
-    def rule_size_tick(self, symbol: str) -> Decimal: ...
-    def rule_amount_min(self, symbol: str) -> Decimal: ...
-    def rule_order_max(self, symbol: str) -> int: ...
-    def long_market_open(self, symbol: str, size: Decimal) -> str: ...
-    def long_limit_open(self, symbol: str, size: Decimal, price: Decimal) -> str: ...
-    def long_market_close(self, symbol: str, size: Decimal) -> str: ...
-    def long_limit_close(self, symbol: str, size: Decimal, price: Decimal) -> str: ...
-    def short_market_open(self, symbol: str, size: Decimal) -> str: ...
-    def short_limit_open(self, symbol: str, size: Decimal, price: Decimal) -> str: ...
-    def short_market_close(self, symbol: str, size: Decimal) -> str: ...
-    def short_limit_close(self, symbol: str, size: Decimal, price: Decimal) -> str: ...
-    def order_close(self, symbol: str, id: str): ...
-    def order_cancel_many(self, symbol: str, ids: List[str]): ...
-    def leverage_set(self, symbol: str, leverage: int): ...
+    def time(self) -> datetime:
+        """
+        获取当前时间
+        """
+
+    def stop(self):
+        """
+        停止运行
+        """
+
+    def init_symbol(self, symbol: str):
+        """
+        初始化交易对
+        [`symbol`] : 交易对
+        """
+
+    def order(self, symbol: str, id: str) -> Optional[Order]:
+        """
+        获取订单
+        [`symbol`] : 交易对
+        [`id`] : 订单ID
+        """
+
+    def orders(self, symbol: str) -> List[Order]:
+        """
+        获取订单
+        [`symbol`] : 交易对
+        """
+
+    def orders_long(self, symbol: str) -> List[Order]:
+        """
+        获取做多订单
+        [`symbol`] : 交易对
+        """
+
+    def orders_long_open(self, symbol: str) -> List[Order]:
+        """
+        获取做多开仓订单
+        [`symbol`] : 交易对
+        """
+
+    def orders_long_close(self, symbol: str) -> List[Order]:
+        """
+        获取做多平仓订单
+        [`symbol`] : 交易对
+        """
+
+    def orders_short(self, symbol: str) -> List[Order]:
+        """
+        获取做空订单
+        [`symbol`] : 交易对
+        """
+
+    def orders_short_open(self, symbol: str) -> List[Order]:
+        """
+        获取做空开仓订单
+        [`symbol`] : 交易对
+        """
+
+    def orders_short_close(self, symbol: str) -> List[Order]:
+        """
+        获取做空平仓订单
+        [`symbol`] : 交易对
+        """
+
+    def leverage(self, symbol: str) -> int:
+        """
+        获取杠杆倍率
+        [`symbol`] : 交易对
+        """
+
+    def cash(self) -> Decimal:
+        """
+        获取资金
+        """
+
+    def cash_available(self) -> Decimal:
+        """
+        获取可用资金
+        """
+
+    def cash_frozen(self) -> Decimal:
+        """
+        获取冻结资金
+        """
+
+    def margin(self) -> Decimal:
+        """
+        获取保证金
+        """
+
+    def pnl(self) -> Decimal:
+        """
+        获取持仓盈亏
+        """
+
+    def long_price(self, symbol: str) -> Decimal:
+        """
+        获取做多均价
+        [`symbol`] : 交易对
+        """
+
+    def long_size(self, symbol: str) -> Decimal:
+        """
+        获取做多持仓
+        [`symbol`] : 交易对
+        """
+
+    def long_size_available(self, symbol: str) -> Decimal:
+        """
+        获取做多可用持仓
+        [`symbol`] : 交易对
+        """
+
+    def long_size_frozen(self, symbol: str) -> Decimal:
+        """
+        获取做多冻结持仓
+        [`symbol`] : 交易对
+        """
+
+    def long_margin(self, symbol: str) -> Decimal:
+        """
+        获取做多保证金
+        [`symbol`] : 交易对
+        """
+
+    def long_pnl(self, symbol: str) -> Decimal:
+        """
+        获取做多盈亏
+        [`symbol`] : 交易对
+        """
+
+    def short_price(self, symbol: str) -> Decimal:
+        """
+        获取做空均价
+        [`symbol`] : 交易对
+        """
+
+    def short_size(self, symbol: str) -> Decimal:
+        """
+        获取做空持仓
+        [`symbol`] : 交易对
+        """
+
+    def short_size_available(self, symbol: str) -> Decimal:
+        """
+        获取做空可用持仓
+        [`symbol`] : 交易对
+        """
+
+    def short_size_frozen(self, symbol: str) -> Decimal:
+        """
+        获取做空冻结持仓
+        [`symbol`] : 交易对
+        """
+
+    def short_margin(self, symbol: str) -> Decimal:
+        """
+        获取做空保证金
+        [`symbol`] : 交易对
+        """
+
+    def short_pnl(self, symbol: str) -> Decimal:
+        """
+        获取做空盈亏
+        [`symbol`] : 交易对
+        """
+
+    def symbols(self) -> List[str]:
+        """
+        获取交易对列表
+        """
+
+    def symbol_pnl(self, symbol: str) -> Decimal:
+        """
+        获取交易对盈亏
+        [`symbol`] : 交易对
+        """
+
+    def symbol_margin(self, symbol: str) -> Decimal:
+        """
+        获取交易对保证金
+        [`symbol`] : 交易对
+        """
+
+    def price_mark(self, symbol: str) -> Decimal:
+        """
+        获取标记价格
+        [`symbol`] : 交易对
+        """
+
+    def price_last(self, symbol: str) -> Decimal:
+        """
+        获取最新价格
+        [`symbol`] : 交易对
+        """
+
+    def price_index(self, symbol: str) -> Decimal:
+        """
+        获取指数价格
+        [`symbol`] : 交易对
+        """
+
+    def price_settlement(self, symbol: str) -> Decimal:
+        """
+        获取结算价格
+        [`symbol`] : 交易对
+        """
+
+    def time_settlement(self, symbol: str) -> datetime:
+        """
+        获取下一次结算时间
+        [`symbol`] : 交易对
+        """
+
+    def rule_price_min(self, symbol: str) -> Decimal:
+        """
+        获取最小交易价格
+        [`symbol`] : 交易对
+        """
+
+    def rule_price_max(self, symbol: str) -> Decimal:
+        """
+        获取最大交易价格
+        [`symbol`] : 交易对
+        """
+
+    def rule_price_tick(self, symbol: str) -> Decimal:
+        """
+        获取交易价格步长
+        [`symbol`] : 交易对
+        """
+
+    def rule_size_min(self, symbol: str) -> Decimal:
+        """
+        获取最小交易数量
+        [`symbol`] : 交易对
+        """
+
+    def rule_size_max(self, symbol: str) -> Decimal:
+        """
+        获取最大交易数量
+        [`symbol`] : 交易对
+        """
+
+    def rule_size_tick(self, symbol: str) -> Decimal:
+        """
+        获取交易数量步长
+        [`symbol`] : 交易对
+        """
+
+    def rule_amount_min(self, symbol: str) -> Decimal:
+        """
+        获取最小交易金额
+        [`symbol`] : 交易对
+        """
+
+    def rule_order_max(self, symbol: str) -> int:
+        """
+        获取最大订单数量
+        [`symbol`] : 交易对
+        """
+
+    def long_market_open(self, symbol: str, size: Decimal) -> str:
+        """
+        做多市价开仓
+        [`symbol`] : 交易对
+        [`size`] : 数量
+        """
+
+    def long_limit_open(self, symbol: str, size: Decimal, price: Decimal) -> str:
+        """
+        做多限价开仓
+        [`symbol`] : 交易对
+        [`size`] : 数量
+        [`price`] : 价格
+        """
+
+    def long_market_close(self, symbol: str, size: Decimal) -> str:
+        """
+        做多市价平仓
+        [`symbol`] : 交易对
+        [`size`] : 数量
+        """
+
+    def long_limit_close(self, symbol: str, size: Decimal, price: Decimal) -> str:
+        """
+        做多限价平仓
+        [`symbol`] : 交易对
+        [`size`] : 数量
+        [`price`] : 价格
+        """
+
+    def short_market_open(self, symbol: str, size: Decimal) -> str:
+        """
+        做空市价开仓
+        [`symbol`] : 交易对
+        [`size`] : 数量
+        """
+
+    def short_limit_open(self, symbol: str, size: Decimal, price: Decimal) -> str:
+        """
+        做空限价开仓
+        [`symbol`] : 交易对
+        [`size`] : 数量
+        [`price`] : 价格
+        """
+
+    def short_market_close(self, symbol: str, size: Decimal) -> str:
+        """
+        做空市价平仓
+        [`symbol`] : 交易对
+        [`size`] : 数量
+        """
+
+    def short_limit_close(self, symbol: str, size: Decimal, price: Decimal) -> str:
+        """
+        做空限价平仓
+        [`symbol`] : 交易对
+        [`size`] : 数量
+        [`price`] : 价格
+        """
+
+    def order_close(self, symbol: str, id: str):
+        """
+        平仓订单
+        [`symbol`] : 交易对
+        [`id`] : 订单ID
+        """
+
+    def order_cancel_many(self, symbol: str, ids: List[str]):
+        """
+        取消多个订单
+        [`symbol`] : 交易对
+        [`ids`] : 订单ID列表
+        """
+
+    def leverage_set(self, symbol: str, leverage: int):
+        """
+        设置杠杆倍率
+        [`symbol`] : 交易对
+        [`leverage`] : 杠杆倍率
+        """
 
 def download_history_data(metas: List[Tuple[str, str, str]]):
     """

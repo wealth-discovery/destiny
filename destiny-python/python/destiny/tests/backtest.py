@@ -1,7 +1,7 @@
 from destiny import *
 
 
-class BacktestStrategy(Strategy):
+class MyStrategy(Strategy):
     symbol: str
     isbuy: bool
 
@@ -48,4 +48,7 @@ class BacktestStrategy(Strategy):
 
 
 init_log(show_std=True, save_file=True)
-run_backtest(BacktestStrategy(), "2023", "2024")
+bs: BacktestStrategy = run_backtest(MyStrategy(), "2023", "2024")
+
+info("每日资金\n", bs.daily_cash[: bs.daily_seq])
+info("每日盈亏\n", bs.daily_pnl[: bs.daily_seq])

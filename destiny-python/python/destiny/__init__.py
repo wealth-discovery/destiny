@@ -16,7 +16,7 @@ from .destiny import (
     API,
     download_history_data,
 )
-from .backtest import run_backtest
+from .backtest import run_backtest, BacktestStrategy
 from .strategy import Strategy
 from decimal import Decimal
 from datetime import datetime

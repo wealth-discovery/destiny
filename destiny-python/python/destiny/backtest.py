@@ -1,5 +1,6 @@
 from .destiny import *
-from .strategy import Strategy, StrategyWrapper
+from .strategy import Strategy
+from .backtest_strategy import BacktestStrategy
 from decimal import Decimal
 import setproctitle
 
@@ -12,7 +13,7 @@ def run_backtest(
     fee_rate_taker: Decimal = Decimal("0.0005"),
     fee_rate_maker: Decimal = Decimal("0.0005"),
     slippage_rate: Decimal = Decimal("0.01"),
-):
+) -> Strategy:
     """
     运行回测
     [`begin`] : 开始时间
@@ -33,7 +34,7 @@ def run_backtest(
     """
 
     setproctitle.setproctitle(f"wealth-discovery-destiny-backtest")
-    strategy = StrategyWrapper(strategy)
+    backtest_strategy = BacktestStrategy(strategy)
     run_backtest__(
         begin,
         end,
@@ -41,13 +42,14 @@ def run_backtest(
         fee_rate_taker,
         fee_rate_maker,
         slippage_rate,
-        strategy.on_init,
-        strategy.on_start,
-        strategy.on_stop,
-        strategy.on_daily,
-        strategy.on_hourly,
-        strategy.on_minutely,
-        strategy.on_kline,
-        strategy.on_order,
-        strategy.on_position,
+        backtest_strategy.on_init,
+        backtest_strategy.on_start,
+        backtest_strategy.on_stop,
+        backtest_strategy.on_daily,
+        backtest_strategy.on_hourly,
+        backtest_strategy.on_minutely,
+        backtest_strategy.on_kline,
+        backtest_strategy.on_order,
+        backtest_strategy.on_position,
     )
+    return backtest_strategy
