@@ -8,7 +8,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "1.0.0"
+version = "1.0.1"
 authors = ["<Husky> <husky.robot.dog@gmail.com>"]
 description = "天命量化库"
 edition = "2021"

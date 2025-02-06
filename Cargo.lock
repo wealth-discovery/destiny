@@ -460,7 +460,7 @@ dependencies = [
 
 [[package]]
 name = "destiny-engine"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -484,7 +484,7 @@ dependencies = [
 
 [[package]]
 name = "destiny-helpers"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -501,7 +501,7 @@ dependencies = [
 
 [[package]]
 name = "destiny-python"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "anyhow",
  "destiny-engine",
@@ -513,7 +513,7 @@ dependencies = [
 
 [[package]]
 name = "destiny-types"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "chrono",
  "pyo3",
