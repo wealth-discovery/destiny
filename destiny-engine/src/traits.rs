@@ -41,6 +41,7 @@ pub trait EngineAccount: Send + Sync {
     fn short_size_frozen(&self, symbol: &str) -> Decimal;
     fn short_margin(&self, symbol: &str) -> Decimal;
     fn short_pnl(&self, symbol: &str) -> Decimal;
+    fn symbols(&self) -> Vec<String>;
     fn symbol_pnl(&self, symbol: &str) -> Decimal;
     fn symbol_margin(&self, symbol: &str) -> Decimal;
 }

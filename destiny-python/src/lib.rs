@@ -305,6 +305,11 @@ impl PythonEngine {
         self.0.short_pnl(symbol)
     }
 
+    #[pyo3(signature = ())]
+    fn symbols(&self) -> Vec<String> {
+        self.0.symbols()
+    }
+
     #[pyo3(signature = (symbol))]
     fn symbol_pnl(&self, symbol: &str) -> Decimal {
         self.0.symbol_pnl(symbol)

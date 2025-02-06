@@ -356,6 +356,9 @@ impl EngineAccount for Backtest {
             .map(|position| position.short_pnl())
             .unwrap_or_default()
     }
+    fn symbols(&self) -> Vec<String> {
+        self.account.lock().positions.keys().cloned().collect()
+    }
     fn symbol_pnl(&self, symbol: &str) -> Decimal {
         self.account
             .lock()
