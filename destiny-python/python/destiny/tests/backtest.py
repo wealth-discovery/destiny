@@ -48,4 +48,6 @@ class BacktestStrategy(Strategy):
 
 
 init_log(show_std=True, save_file=True)
-run_backtest(BacktestStrategy(), "2023", "2024")
+strategy: BacktestStrategy = run_backtest(BacktestStrategy(), "2023", "2024")
+
+print(strategy)
